@@ -14,7 +14,7 @@ import {
   is_role_lock_enabled,
   sort_players,
 } from "./common";
-import { import_lobby, restore_saved_teams, save_checkin_list, save_pinned_list, save_players_list } from "./importExport";
+import { import_lobby, read_saved_json, restore_saved_teams, save_checkin_list, save_pinned_list, save_players_list } from "./importExport";
 import { S, storage_prefix, store } from "./state";
 import { StatsUpdater } from "./statsUpdater";
 import type { Player, SettingsShape, TeamSlots } from "./types";
@@ -78,28 +78,26 @@ export function init_state() {
   }
 
   S.Settings = get_default_settings();
-  const saved_settings_json = s.getItem(storage_prefix + "settings");
-  if (saved_settings_json != null) {
-    const saved_settings = JSON.parse(saved_settings_json);
+  const saved_settings = read_saved_json("settings");
+  if (saved_settings !== null && typeof saved_settings === "object") {
     for (const i in S.Settings) {
       if (saved_settings[i] !== undefined) S.Settings[i] = saved_settings[i];
     }
   }
   apply_stats_updater_settings();
 
-  const role_lock = JSON.parse(s.getItem(storage_prefix + "role_lock_enabled") ?? "null");
+  const role_lock = read_saved_json("role_lock_enabled");
   S.role_lock_enabled = role_lock !== null ? Boolean(role_lock) : false;
 
-  const pinned = s.getItem(storage_prefix + "pinned_players");
-  if (pinned != null) S.pinned_players = new Set(JSON.parse(pinned));
+  const pinned = read_saved_json("pinned_players");
+  if (Array.isArray(pinned)) S.pinned_players = new Set(pinned);
 
-  const checkin = s.getItem(storage_prefix + "checkin");
-  if (checkin != null) S.checkin_list = new Set(JSON.parse(checkin));
+  const checkin = read_saved_json("checkin");
+  if (Array.isArray(checkin)) S.checkin_list = new Set(checkin);
 
   S.ExportOptions = get_default_export_options();
-  const export_options = s.getItem(storage_prefix + "export_options");
-  if (export_options != null) {
-    const saved = JSON.parse(export_options);
+  const saved = read_saved_json("export_options");
+  if (saved !== null && typeof saved === "object") {
     for (const i of Object.keys(S.ExportOptions) as (keyof typeof S.ExportOptions)[]) {
       if (saved[i] !== undefined) (S.ExportOptions as unknown as Record<string, unknown>)[i] = saved[i];
     }

@@ -2,14 +2,16 @@ import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as A from "../logic/actions";
 import { format_player_id, get_default_settings, print_date, round_to } from "../logic/common";
-import { class_names, class_titles, hero_classes, hero_names, ow_ranks, rank_division, rank_tier, sr_from_rank, SR_MAX } from "../logic/defines";
+import { class_names, class_titles, ow_ranks, rank_division, rank_tier, sr_from_rank, SR_MAX } from "../logic/defines";
+import { heroName, heroRole } from "./HoverCard";
 import { export_lobby, export_teams } from "../logic/importExport";
 import { S } from "../logic/state";
 import type { Player, SettingsShape } from "../logic/types";
 import { cancelBalance, clearStatsLog, dismissBalance, updatePlayerNow } from "./controller";
-import { IconArrowDown, IconArrowUp, IconCopy, IconDownload, IconEdit, IconExternal, IconLock, IconRefresh, RankBadge, RoleIcon } from "./icons";
+import { IconArrowDown, IconArrowUp, IconCopy, IconDownload, IconEdit, IconExternal, IconLock, IconRefresh, IconX, RankBadge, RoleIcon } from "./icons";
 import { Field, Modal, Seg } from "./Modal";
 import { Toggle } from "./Core";
+import { prepareIconDataUris } from "./iconRaster";
 import { closeDialog, highlight, rerender, toast, ui } from "./store";
 
 function copyText(text: string) {
@@ -171,7 +173,9 @@ function ExportTeamsDialog() {
     setImgUrl(null);
     if (format == "image") {
       let url: string | null = null;
-      renderTableImage(out).then((blob) => {
+      prepareIconDataUris()
+        .then(() => renderTableImage(export_teams(format, true, sr, classes, false, 2)))
+        .then((blob) => {
         if (blob) {
           url = URL.createObjectURL(blob);
           setImgUrl(url);
@@ -265,6 +269,12 @@ function ExportTeamsDialog() {
       {format == "image" && <p className="mt-2 text-[12px] text-faint">Right-click the image to copy it, or download the PNG.</p>}
     </Modal>
   );
+}
+
+function clampSr(raw: string) {
+  const n = Math.round(Number(raw));
+  if (!Number.isFinite(n) || n < 0) return 0;
+  return Math.min(n, SR_MAX);
 }
 
 function RankPicker({ sr, onChange }: { sr: number; onChange: (sr: number) => void }) {
@@ -370,7 +380,7 @@ function EditPlayerDialog({ player, nonce }: { player: Player; nonce: number }) 
               Name
               {player.ne === true && (
                 <button className="chip !h-5 !text-[11px] text-brand-2" title="Name was edited manually and won't be overwritten by stats. Click to allow updates." onClick={() => clearMark("ne")}>
-                  <IconEdit size={11} /> edited ✕
+                  <IconEdit size={11} /> edited <IconX size={11} />
                 </button>
               )}
             </span>
@@ -396,12 +406,12 @@ function EditPlayerDialog({ player, nonce }: { player: Player; nonce: number }) 
         <span className="ml-auto flex gap-1.5">
           {player.se === true && (
             <button className="chip !h-5 !text-[11px] text-brand-2" title="SR was edited manually. Click to allow stats updates." onClick={() => clearMark("se")}>
-              SR edited ✕
+              SR edited <IconX size={11} />
             </button>
           )}
           {player.ce === true && (
             <button className="chip !h-5 !text-[11px] text-brand-2" title="Roles were edited manually. Click to allow stats updates." onClick={() => clearMark("ce")}>
-              Roles edited ✕
+              Roles edited <IconX size={11} />
             </button>
           )}
         </span>
@@ -434,7 +444,7 @@ function EditPlayerDialog({ player, nonce }: { player: Player; nonce: number }) 
                 max={SR_MAX - 1}
                 value={row.sr}
                 aria-label={`${row.class_name} SR`}
-                onChange={(e) => setRows(rows.map((r, k) => (k == i ? { ...r, sr: e.target.value === "" ? 0 : Number(e.target.value) } : r)))}
+                onChange={(e) => setRows(rows.map((r, k) => (k == i ? { ...r, sr: clampSr(e.target.value) } : r)))}
               />
               <span className="w-[70px] text-[12px] text-faint">{player.playtime_by_class[row.class_name] ?? 0} hrs</span>
               <span className="ml-auto flex">
@@ -456,8 +466,8 @@ function EditPlayerDialog({ player, nonce }: { player: Player; nonce: number }) 
           <div className="flex flex-wrap gap-2">
             {player.top_heroes.map((h) => (
               <span key={h.hero} className="chip !h-7 !text-[14px]">
-                {hero_classes[h.hero] && <RoleIcon role={hero_classes[h.hero]} size={14} />}
-                {hero_names[h.hero] ?? h.hero}
+                {heroRole(h.hero) && <RoleIcon role={heroRole(h.hero)} size={14} />}
+                {heroName(h.hero)}
                 <span className="text-faint">{h.playtime} h</span>
               </span>
             ))}
@@ -483,7 +493,13 @@ function SettingsDialog() {
   const [form, setForm] = useState<SettingsShape>(() => JSON.parse(JSON.stringify(S.Settings)));
   const set = <K extends keyof SettingsShape>(k: K, v: SettingsShape[K]) => setForm((f) => ({ ...f, [k]: v }));
   const teamSize = Object.values(form.slots_count).reduce((a, b) => a + Number(b), 0);
+  const problems: string[] = [];
+  if (class_names.some((c) => !Number.isInteger(Number(form.slots_count[c])) || form.slots_count[c] < 0 || form.slots_count[c] > 12)) problems.push("Role slots must be whole numbers from 0 to 12.");
+  if (teamSize < 1) problems.push("A team needs at least one slot.");
+  if (form.adjust_sr && (["tank", "dps", "support"] as const).some((c) => !(form[`adjust_${c}`] >= 0 && form[`adjust_${c}`] <= 999))) problems.push("Role weights must be between 0% and 999%.");
+  if (!(form.update_picked_maxage >= 0)) problems.push("Stats age must be 0 days or more.");
   const apply = () => {
+    if (problems.length) return;
     A.apply_settings(form);
     closeDialog();
   };
@@ -500,7 +516,8 @@ function SettingsDialog() {
           <button className="btn btn-ghost" onClick={closeDialog}>
             Cancel
           </button>
-          <button className="btn btn-primary" onClick={apply}>
+          {problems.length > 0 && <span className="mr-auto text-[13px] text-danger">{problems[0]}</span>}
+          <button className="btn btn-primary" onClick={apply} disabled={problems.length > 0}>
             Apply
           </button>
         </>
@@ -737,7 +754,10 @@ function CheckinDialog() {
   };
   const header = (col: 0 | 1, label: string) => (
     <th onClick={() => setSort((s) => ({ col, asc: s.col == col ? !s.asc : true }))} aria-sort={sort.col == col ? (sort.asc ? "ascending" : "descending") : "none"}>
-      {label} {sort.col == col ? (sort.asc ? "▲" : "▼") : ""}
+      <span className="inline-flex items-center gap-1">
+        {label}
+        {sort.col == col && (sort.asc ? <IconArrowUp size={12} /> : <IconArrowDown size={12} />)}
+      </span>
     </th>
   );
   return (
@@ -756,7 +776,7 @@ function CheckinDialog() {
         <table className="tbl">
           <thead>
             <tr>
-              {header(0, "✓")}
+              {header(0, "In")}
               {header(1, "BattleTag")}
             </tr>
           </thead>
@@ -810,6 +830,151 @@ function ConfirmDialog({ title, message, confirmLabel, danger, onConfirm }: { ti
   );
 }
 
+const GUIDE: { title: string; body: React.ReactNode }[] = [
+  {
+    title: "Add players",
+    body: (
+      <>
+        Type a BattleTag like <b>Name#1234</b> at the top. Ranks, role playtime and top heroes come from the OverFast API (public profiles only). If the lookup fails you can still add the player by hand. Big lists go
+        through <b>Import</b> in the lobby.
+      </>
+    ),
+  },
+  {
+    title: "Build the teams",
+    body: (
+      <>
+        Drag cards between the lobby and team slots, or double-click to send a player to the next free slot and back. While you drag, slots that fit the player's roles light up. <b>Fill</b> picks random players
+        from the lobby, using only checked-in players if anyone is checked in.
+      </>
+    ),
+  },
+  {
+    title: "Balance",
+    body: (
+      <>
+        <b>Balance</b> tries every split and picks one of the most even. Press it again for another variant. With role lock on, players are placed into tank, damage and support slots; the gap meter shows how close
+        the teams are.
+      </>
+    ),
+  },
+  {
+    title: "Edit a player",
+    body: (
+      <>
+        Right-click a card (or focus it and press <b>E</b>) to set rank and division per role, reorder roles (top is main), pin the player to their team or mark them checked in. Manually edited values are protected from
+        stats updates until you clear the mark.
+      </>
+    ),
+  },
+  {
+    title: "Share the result",
+    body: (
+      <>
+        <b>Export</b> gives the teams as plain text for chat, a table you can paste into a spreadsheet, or a PNG. The lobby exports to JSON, a BattleTag list or CSV.
+      </>
+    ),
+  },
+  {
+    title: "Settings",
+    body: (
+      <>
+        Switch between 5v5 and 6v6 or set any slot count, choose how strongly the balancer favors equal SR versus players on their main role, keep one-tricks apart, and pick PC or console ranks.
+      </>
+    ),
+  },
+];
+
+function InfoDialog() {
+  return (
+    <Modal
+      title="How it works"
+      subtitle="A team balancer for Overwatch custom games. Everything stays in this browser."
+      onClose={closeDialog}
+      width={860}
+      footer={
+        <button className="btn btn-primary" onClick={closeDialog}>
+          Got it
+        </button>
+      }
+    >
+      <div className="grid gap-3 md:grid-cols-2">
+        {GUIDE.map((g, i) => (
+          <motion.div
+            key={g.title}
+            className="relative border border-line bg-ink-900/60 p-4 pl-[60px]"
+            style={{ clipPath: "polygon(10px 0,100% 0,calc(100% - 10px) 100%,0 100%)" }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.04 * i, duration: 0.3 }}
+          >
+            <span className="absolute left-4 top-4 grid h-9 w-8 place-items-center font-display text-[17px] font-extrabold text-[#1b0d00] [clip-path:polygon(50%_0,100%_25%,100%_75%,50%_100%,0_75%,0_25%)] bg-gradient-to-b from-brand-2 to-brand">
+              {i + 1}
+            </span>
+            <div className="font-display text-[18px] font-bold uppercase tracking-[0.06em]">{g.title}</div>
+            <p className="mt-1 text-[14px] leading-relaxed text-muted [&_b]:font-semibold [&_b]:text-text">{g.body}</p>
+          </motion.div>
+        ))}
+      </div>
+
+      <div className="mt-5 grid gap-4 md:grid-cols-[1.1fr_1fr]">
+        <div>
+          <div className="hud-label mb-2 !text-brand">Ranks and SR</div>
+          <p className="text-[14px] leading-relaxed text-muted">
+            The game shows ranks, not numbers, so the balancer converts them: each rank is 500 SR and each division 100 SR, from Bronze (500) to Champion (4999). Gold 3 is 1750, Diamond 1 is 3450. It is an
+            approximation that keeps neighbouring ranks in the right order.
+          </p>
+          <div className="mt-3 flex flex-wrap items-center gap-1.5">
+            {ow_ranks.slice(1).map((t) => (
+              <span key={t.key} className="flex items-center gap-1 text-[12px] text-muted">
+                <RankBadge sr={t.min + 1} size={22} showDivision={false} />
+                {t.title}
+              </span>
+            ))}
+          </div>
+        </div>
+        <div>
+          <div className="hud-label mb-2 !text-brand">Shortcuts</div>
+          <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-[14px]">
+            {[
+              ["Double-click", "Move to a free slot or back to the lobby"],
+              ["Right-click", "Edit player"],
+              ["Enter", "Move the focused player"],
+              ["E", "Edit the focused player"],
+              ["Esc", "Close a dialog or cancel a drag"],
+            ].map(([k, v]) => (
+              <div key={k} className="contents">
+                <dt>
+                  <kbd className="chip !h-6 !text-[12px]">{k}</kbd>
+                </dt>
+                <dd className="text-muted">{v}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      </div>
+
+      <div className="mt-5 border-t border-line pt-4 text-[13px] leading-relaxed text-muted">
+        <div className="hud-label mb-1.5">About &amp; credits</div>
+        Based on{" "}
+        <a className="text-t1 hover:underline" href="https://github.com/adminimusRU/OWcustomBalancer" target="_blank" rel="noreferrer">
+          OWcustomBalancer
+        </a>{" "}
+        by adminimusRU (MIT); the balancing algorithm is unchanged. Stats from the{" "}
+        <a className="text-t1 hover:underline" href="https://overfast-api.tekrop.fr" target="_blank" rel="noreferrer">
+          OverFast API
+        </a>
+        . Background photo “Ciudad de las artes y las ciencias” by Nan Palmero,{" "}
+        <a className="text-t1 hover:underline" href="https://creativecommons.org/licenses/by/2.0/" target="_blank" rel="noreferrer">
+          CC BY 2.0
+        </a>
+        , resized and color-graded. Fonts: Saira Condensed and Barlow (SIL OFL). Icons and badges are original. Not affiliated with or endorsed by Blizzard Entertainment; Overwatch is a trademark of Blizzard
+        Entertainment, Inc.
+      </div>
+    </Modal>
+  );
+}
+
 export function BalanceOverlay() {
   const b = ui.balance;
   return (
@@ -839,7 +1004,7 @@ export function BalanceOverlay() {
                   transform="rotate(-90 100 100)"
                   style={{ transition: "stroke-dashoffset .3s" }}
                 />
-                <g className="ring-spin" style={{ transformOrigin: "100px 100px" }}>
+                <g className="ring-busy" style={{ transformOrigin: "100px 100px" }}>
                   <circle cx="100" cy="100" r="72" fill="none" stroke="rgb(255 255 255 / .25)" strokeWidth="1.5" strokeDasharray="10 16" />
                 </g>
               </svg>
@@ -891,6 +1056,7 @@ export function Dialogs() {
       {d.kind == "statsLog" && <StatsLogDialog key="statsLog" />}
       {d.kind == "checkin" && <CheckinDialog key="checkin" />}
       {d.kind == "confirm" && <ConfirmDialog key="confirm" {...d} />}
+      {d.kind == "info" && <InfoDialog key="info" />}
     </AnimatePresence>
   );
 }

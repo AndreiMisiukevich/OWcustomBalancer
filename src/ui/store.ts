@@ -12,6 +12,7 @@ export type DialogState =
   | { kind: "statsUpdate"; scope: "all" | "active" }
   | { kind: "statsLog" }
   | { kind: "checkin" }
+  | { kind: "info" }
   | { kind: "confirm"; title: string; message: string; confirmLabel: string; danger?: boolean; onConfirm: () => void };
 
 export interface Toast {
@@ -26,9 +27,9 @@ export const ui = {
   highlighted: new Map<string, number>(),
   scrollTo: null as string | null,
   adding: false,
-  addInput: "",
   balance: { phase: "idle" as "idle" | "running" | "notfound", progress: 0, visible: false },
   balancePulse: 0,
+  balanceStamp: false,
   stats: {
     active: false,
     status: "",
@@ -40,6 +41,8 @@ export const ui = {
     editorResult: "",
   },
   dragging: false,
+  dragPlayer: null as Player | null,
+  addReset: 0,
 };
 
 let toastSeq = 0;

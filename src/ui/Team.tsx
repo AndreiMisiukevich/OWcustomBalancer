@@ -8,6 +8,8 @@ import { runAndRender } from "./controller";
 import { IconX, RankBadge, RoleIcon } from "./icons";
 import { EmptySlot, PlayerCard } from "./PlayerCard";
 import { ui } from "./store";
+import { emptySlotId } from "./dropTargets";
+import { Tip } from "./Tip";
 
 export function AnimatedNumber({ value, className }: { value: number; className?: string }) {
   const mv = useMotionValue(value);
@@ -47,6 +49,9 @@ export function TeamPanel({ team }: { team: 1 | 2 }) {
   const sr = calc_team_sr(flat, slots);
   const count = roleLock ? Object.values(slots).reduce((a, s) => a + s.length, 0) : flat.length;
   const method = S.Settings.sr_calc_method;
+  const full = teamSize > 0 && count >= teamSize;
+  const dragged = ui.dragPlayer;
+  const fits = (role?: string) => (dragged ? (role ? dragged.classes.includes(role) : true) : false);
 
   return (
     <section
@@ -56,6 +61,7 @@ export function TeamPanel({ team }: { team: 1 | 2 }) {
     >
       <div className="team-glow" />
       {ui.balancePulse > 0 && <div key={ui.balancePulse} className="balance-pulse pointer-events-none absolute inset-0" />}
+      {full && <div key={`full-${ui.balancePulse}`} className="team-full-sweep pointer-events-none absolute inset-0" />}
       <div className="relative flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="hud-label" style={{ color }}>
@@ -63,29 +69,37 @@ export function TeamPanel({ team }: { team: 1 | 2 }) {
           </div>
           <TeamName team={team} />
         </div>
-        <button className="icon-btn" title="Move all non-pinned players to the lobby" aria-label={`Clear team ${team}`} onClick={() => runAndRender(() => A.move_team_to_lobby(team))}>
-          <IconX size={16} />
-        </button>
+        <Tip label="Send everyone except pinned players back to the lobby">
+          <button className="icon-btn" aria-label={`Clear team ${team}`} onClick={() => runAndRender(() => A.move_team_to_lobby(team))}>
+            <IconX size={17} />
+          </button>
+        </Tip>
       </div>
 
       <div className="relative mt-2 flex items-center gap-3">
         <RankBadge sr={sr} size={46} />
         <div>
           <AnimatedNumber value={sr} className="team-sr" />
-          <div className="hud-label mt-1 !tracking-[0.14em]" title={count < teamSize ? "Empty slots count as 0 SR in the team average" : undefined}>
-            {count < teamSize ? `Avg SR · ${teamSize - count} empty` : `Avg SR · ${rank_label(sr)}`}
-          </div>
+          {full ? (
+            <div className="hud-label mt-1">Avg SR · {rank_label(sr)}</div>
+          ) : (
+            <Tip label="Empty slots count as 0 SR in the team average">
+              <div className="hud-label mt-1 w-fit cursor-help">
+                Avg SR · {teamSize - count} {teamSize - count == 1 ? "slot" : "slots"} open
+              </div>
+            </Tip>
+          )}
         </div>
         {!roleLock && (
           <div className="ml-auto flex flex-col items-end gap-1">
-            <span className="hud-label !text-[10px]">Sort</span>
+            <span className="hud-label">Sort</span>
             <div className="seg !p-[2px]">
               {[
                 ["class", "Role"],
                 ["display_name", "Name"],
                 ["sr", "SR"],
               ].map(([f, l]) => (
-                <button key={f} className="!h-6 !px-2 !text-[11px]" onClick={() => runAndRender(() => A.sort_team(team, f))}>
+                <button key={f} className="!h-7 !px-2.5 !text-[12px]" onClick={() => runAndRender(() => A.sort_team(team, f))}>
                   {l}
                 </button>
               ))}
@@ -100,18 +114,18 @@ export function TeamPanel({ team }: { team: 1 | 2 }) {
               const arr = slots[c] ?? [];
               const items = arr.map((p) => <PlayerCard key={p.id} player={p} srMethod={method} slotClass={c} tint={tint} />);
               for (let i = arr.length; i < (S.Settings.slots_count[c] ?? 0); i++) {
-                items.push(<EmptySlot key={`${c}-e${i}`} id={`empty:${container}:${c}:${i}`} role={c} />);
+                items.push(<EmptySlot key={`${c}-e${i}`} id={emptySlotId(container, c, i)} role={c} fits={fits(c)} />);
               }
               return items;
             })
           : [
               ...flat.map((p) => <PlayerCard key={p.id} player={p} srMethod={method} tint={tint} />),
-              ...Array.from({ length: Math.max(0, teamSize - flat.length) }, (_, i) => <EmptySlot key={`e${i}`} id={`empty:${container}::${i}`} />),
+              ...Array.from({ length: Math.max(0, teamSize - flat.length) }, (_, i) => <EmptySlot key={`e${i}`} id={emptySlotId(container, undefined, i)} fits={fits()} />),
             ]}
       </div>
 
       {roleLock && (
-        <div className="relative mt-3 flex gap-3 text-[12px] text-faint">
+        <div className="relative mt-3 flex gap-4 text-[13px] text-muted">
           {class_names.map((c) => (
             <span key={c} className="flex items-center gap-1">
               <RoleIcon role={c} size={13} /> {(slots[c] ?? []).length}/{S.Settings.slots_count[c]}

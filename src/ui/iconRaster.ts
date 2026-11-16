@@ -24,7 +24,12 @@ function rasterize(svg: string, size: number): Promise<string> {
   });
 }
 
-export async function prepareIconDataUris() {
-  for (const c of class_names) icon_datauri.classes[c] = await rasterize(roleSvgString(c, 60, "#3a4560"), 20);
-  for (const r of ow_ranks) icon_datauri.ranks[r.key] = await rasterize(rankSvgString(r.key, 60), 20);
+let ready: Promise<void> | null = null;
+
+export function prepareIconDataUris() {
+  ready ??= (async () => {
+    for (const c of class_names) icon_datauri.classes[c] = await rasterize(roleSvgString(c, 60, "#3a4560"), 20);
+    for (const r of ow_ranks) icon_datauri.ranks[r.key] = await rasterize(rankSvgString(r.key, 60), 20);
+  })();
+  return ready;
 }

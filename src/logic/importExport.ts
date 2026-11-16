@@ -47,11 +47,15 @@ export function export_lobby(format: string) {
       const sr_dps = is_undefined(p.sr_by_class["dps"], 0);
       const sr_support = is_undefined(p.sr_by_class["support"], 0);
       export_str +=
-        player_id + "," + p.display_name + "," + p.level + "," + sr_tank + "," + sr_dps + "," + sr_support +
-        "," + main_class + "," + main_hero + "," + last_updated + "," + p.private_profile + "\n";
+        [player_id, p.display_name, p.level, sr_tank, sr_dps, sr_support, main_class, main_hero, last_updated, p.private_profile].map(csv_cell).join(",") + "\n";
     }
   }
   return export_str.trim();
+}
+
+function csv_cell(value: unknown) {
+  const text = String(value);
+  return /[",\n\r]/.test(text) ? '"' + text.replace(/"/g, '""') + '"' : text;
 }
 
 export function export_teams(
@@ -90,7 +94,7 @@ export function export_teams(
             let player_str = "";
             if (include_sr) player_str += get_player_sr(player, S.Settings.sr_calc_method) + "\t";
             player_str += player.display_name;
-            if (include_classes) player_str += player.classes.join("/");
+            if (include_classes) player_str += "\t" + player.classes.join("/");
             setup_str += player_str + "\n";
           }
           setup_str += "\n";
@@ -234,9 +238,12 @@ export function import_lobby(format: string, import_str: string | null): ImportR
       if (import_struct.format_type !== undefined && import_struct.format_type != "customs") {
         throw new Error("Unsupported format type: " + import_struct.format_type);
       }
+      if (!Array.isArray(import_struct.players)) throw new Error("no players list");
       for (let i = 0; i < import_struct.players.length; i++) {
         let imported_player = import_struct.players[i];
+        if (!imported_player || typeof imported_player.id !== "string" || imported_player.id.trim() == "") continue;
         if (find_player_by_id(imported_player.id) !== undefined) continue;
+        if (added_players.some((p) => p.id == imported_player.id)) continue;
         imported_player = sanitize_player_struct(imported_player, import_struct.format_version);
         added_players.push(imported_player);
       }
@@ -246,10 +253,13 @@ export function import_lobby(format: string, import_str: string | null): ImportR
   } else if (format == "text") {
     try {
       const battletag_list = import_str.trim().split("\n");
-      for (const line of battletag_list) {
+      for (const raw_line of battletag_list) {
+        const line = raw_line.trim();
+        if (line == "") continue;
         const fields = line.split(/[ \t.,;|]+/);
         const player_id = format_player_id(fields[0]);
         if (find_player_by_id(player_id) !== undefined) continue;
+        if (added_players.some((p) => p.id == player_id)) continue;
         const new_player = create_empty_player();
         delete new_player.empty;
         new_player.id = player_id;
@@ -285,30 +295,54 @@ export function import_lobby(format: string, import_str: string | null): ImportR
   return { ok: true, added: added_players, for_update: players_for_update };
 }
 
-function parse_saved(key: string) {
+export const storage_errors: string[] = [];
+
+export function read_saved_json(key: string): any {
   const json = store().getItem(storage_prefix + key);
-  return json != null ? JSON.parse(json) : null;
+  if (json == null) return null;
+  try {
+    return JSON.parse(json);
+  } catch {
+    storage_errors.push(key);
+    return null;
+  }
+}
+
+function parse_saved(key: string) {
+  const value = read_saved_json(key);
+  return value !== null && typeof value === "object" ? value : null;
+}
+
+function is_player_like(p: unknown): boolean {
+  return typeof p === "object" && p !== null && typeof (p as { id?: unknown }).id === "string";
 }
 
 export function restore_saved_teams() {
   let saved_format: number | string | null = store().getItem(storage_prefix + "saved_format");
   if (saved_format === null) saved_format = 1;
   const fmt = Number(saved_format);
+  const seen = new Set<string>();
+  const fresh = (p: unknown) => {
+    if (!is_player_like(p)) return false;
+    const id = (p as { id: string }).id;
+    if (seen.has(id)) return false;
+    seen.add(id);
+    return true;
+  };
 
   for (const [key, target] of [["lobby", S.lobby], ["team1", S.team1], ["team2", S.team2]] as const) {
     const saved_team = parse_saved(key);
-    if (saved_team != null) {
-      for (const i in saved_team) target.push(sanitize_player_struct(saved_team[i], fmt));
+    if (Array.isArray(saved_team)) {
+      for (const p of saved_team) if (fresh(p)) target.push(sanitize_player_struct(p, fmt));
     }
   }
   for (const [key, target] of [["team1_slots", S.team1_slots], ["team2_slots", S.team2_slots]] as const) {
     init_team_slots(target);
     const saved_team = parse_saved(key);
     if (saved_team != null) {
-      for (const class_name in saved_team) {
-        for (const i in saved_team[class_name]) {
-          target[class_name].push(sanitize_player_struct(saved_team[class_name][i], fmt));
-        }
+      for (const class_name of class_names) {
+        if (!Array.isArray(saved_team[class_name])) continue;
+        for (const p of saved_team[class_name]) if (fresh(p)) target[class_name].push(sanitize_player_struct(p, fmt));
       }
     }
   }
@@ -342,6 +376,15 @@ export function sanitize_player_struct(player_struct: any, saved_format: number)
   if (saved_format >= 3) {
     player_struct.last_updated = player_struct.last_updated !== undefined ? new Date(player_struct.last_updated) : new Date(0);
   }
+  if (Number.isNaN(new Date(player_struct.last_updated).getTime())) player_struct.last_updated = new Date(0);
+  if (typeof player_struct.sr_by_class !== "object" || player_struct.sr_by_class === null) player_struct.sr_by_class = {};
+  if (typeof player_struct.playtime_by_class !== "object" || player_struct.playtime_by_class === null) player_struct.playtime_by_class = {};
+  if (!Array.isArray(player_struct.classes)) player_struct.classes = [];
+  player_struct.classes = player_struct.classes.filter((c: unknown, i: number, arr: unknown[]) => (class_names as readonly unknown[]).includes(c) && arr.indexOf(c) == i);
+  if (typeof player_struct.display_name !== "string") player_struct.display_name = format_player_name(String(player_struct.id));
+  if (typeof player_struct.level !== "number") player_struct.level = Number(player_struct.level) || 0;
+  if (typeof player_struct.private_profile !== "boolean") player_struct.private_profile = false;
+  player_struct.top_heroes = player_struct.top_heroes.filter((h: any) => h && typeof h.hero === "string");
   return player_struct as Player;
 }
 

@@ -6,6 +6,8 @@ import { S } from "../logic/state";
 import { runAndRender } from "./controller";
 import { IconCheck, IconDownload, IconSearch, IconShuffle, IconSort, IconTrash, IconUpload, IconUsers, IconX } from "./icons";
 import { PlayerCard } from "./PlayerCard";
+import { AnimatedNumber } from "./Team";
+import { Tip } from "./Tip";
 import { confirmAction, openDialog } from "./store";
 
 const SORTS: [string, string][] = [
@@ -30,9 +32,11 @@ function SortMenu() {
   }, [open]);
   return (
     <div className="relative" ref={ref}>
-      <button className="icon-btn" title="Sort lobby" aria-label="Sort lobby" onClick={() => setOpen((o) => !o)}>
-        <IconSort size={17} />
-      </button>
+      <Tip label="Sort or shuffle">
+        <button className="icon-btn" aria-label="Sort lobby" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+          <IconSort size={17} />
+        </button>
+      </Tip>
       <AnimatePresence>
         {open && (
           <motion.div
@@ -90,25 +94,33 @@ export function Lobby({ dragging }: { dragging: boolean }) {
         <div>
           <div className="hud-label">Player pool</div>
           <h2 className="title-skew text-[28px] leading-none">
-            Lobby <span className="text-brand">{S.lobby.length}</span>
+            Lobby <AnimatedNumber value={S.lobby.length} className="text-brand" />
           </h2>
         </div>
         <div className="flex items-center">
-          <button className="icon-btn" title="Import players" aria-label="Import players" onClick={() => openDialog({ kind: "import" })}>
-            <IconUpload size={17} />
-          </button>
-          <button className="icon-btn" title="Export players" aria-label="Export players" onClick={() => openDialog({ kind: "exportLobby" })}>
-            <IconDownload size={17} />
-          </button>
+          <Tip label="Import players">
+            <button className="icon-btn" aria-label="Import players" onClick={() => openDialog({ kind: "import" })}>
+              <IconUpload size={17} />
+            </button>
+          </Tip>
+          <Tip label="Export players">
+            <button className="icon-btn" aria-label="Export players" onClick={() => openDialog({ kind: "exportLobby" })}>
+              <IconDownload size={17} />
+            </button>
+          </Tip>
           <SortMenu />
-          <button
-            className="icon-btn hover:!text-danger"
-            title="Delete all lobby players"
-            aria-label="Delete all lobby players"
-            onClick={() => confirmAction("Clear lobby", "Permanently delete all players in the lobby?", "Delete all", () => runAndRender(() => A.clear_lobby()), true)}
-          >
-            <IconTrash size={17} />
-          </button>
+          <Tip label="Delete everyone in the lobby">
+            <button
+              className="icon-btn hover:!text-danger"
+              aria-label="Delete all lobby players"
+              disabled={S.lobby.length == 0}
+              onClick={() =>
+                confirmAction("Clear lobby", `Permanently delete all ${S.lobby.length} players in the lobby? Players in teams stay.`, "Delete all", () => runAndRender(() => A.clear_lobby()), true)
+              }
+            >
+              <IconTrash size={17} />
+            </button>
+          </Tip>
         </div>
       </div>
 
@@ -121,13 +133,15 @@ export function Lobby({ dragging }: { dragging: boolean }) {
           <button className="btn btn-sm" onClick={() => openDialog({ kind: "checkin" })}>
             <IconCheck size={14} /> Check-in
           </button>
-          <button
-            className="btn btn-sm btn-ghost"
-            title="Clear check-in mark for all players"
-            onClick={() => confirmAction("Reset check-in", "Clear all check-in marks?", "Reset", () => runAndRender(() => A.reset_checkin()))}
-          >
-            Reset
-          </button>
+          <Tip label="Clear all check-in marks">
+            <button
+              className="btn btn-sm btn-ghost"
+              disabled={S.checkin_list.size == 0}
+              onClick={() => confirmAction("Reset check-in", "Clear all check-in marks?", "Reset", () => runAndRender(() => A.reset_checkin()))}
+            >
+              Reset
+            </button>
+          </Tip>
         </div>
       </div>
 
@@ -158,11 +172,28 @@ export function Lobby({ dragging }: { dragging: boolean }) {
           ))}
         </div>
         {S.lobby.length == 0 && (
-          <div className="grid h-full min-h-[140px] place-items-center px-6 text-center text-[14px] text-faint">
-            {dragging ? "Drop here to send the player back to the lobby" : "No players yet. Add a BattleTag above or import a list."}
-          </div>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex h-full min-h-[200px] flex-col items-center justify-center gap-3 px-6 text-center">
+            <svg width="56" height="56" viewBox="0 0 64 64" aria-hidden="true" className="opacity-70">
+              <path d="M32 3 57 17.5v29L32 61 7 46.5v-29Z" fill="none" stroke="rgb(150 180 255 / .35)" strokeWidth="2" strokeDasharray="6 5" className="ring-spin" style={{ transformOrigin: "32px 32px" }} />
+              <path d="M32 22v20M22 32h20" stroke="#ff9a1f" strokeWidth="3" strokeLinecap="round" />
+            </svg>
+            <div className="font-display text-[18px] font-bold uppercase tracking-[0.08em]">{dragging ? "Drop to bench" : "Lobby is empty"}</div>
+            <p className="max-w-[240px] text-[14px] leading-snug text-muted">
+              {dragging ? "Release here to send the player back to the lobby." : "Add a BattleTag at the top, or import a list you already have."}
+            </p>
+            {!dragging && (
+              <div className="mt-1 flex gap-2">
+                <button className="btn btn-sm" onClick={() => openDialog({ kind: "import" })}>
+                  <IconUpload size={14} /> Import list
+                </button>
+                <button className="btn btn-sm btn-ghost" onClick={() => openDialog({ kind: "info" })}>
+                  How it works
+                </button>
+              </div>
+            )}
+          </motion.div>
         )}
-        {S.lobby.length > 0 && visible.length == 0 && <div className="py-6 text-center text-[14px] text-faint">No players match “{filterInput}”.</div>}
+        {S.lobby.length > 0 && visible.length == 0 && <div className="py-6 text-center text-[14px] text-muted">No players match “{filterInput}”.</div>}
       </div>
     </section>
   );

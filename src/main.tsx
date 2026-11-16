@@ -1,4 +1,3 @@
-import "@fontsource/saira-condensed/600.css";
 import "@fontsource/saira-condensed/700.css";
 import "@fontsource/saira-condensed/800.css";
 import "@fontsource/barlow/400.css";
@@ -7,15 +6,26 @@ import "@fontsource/barlow/600.css";
 import "./styles.css";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
+import { storage_errors } from "./logic/importExport";
 import { App } from "./ui/App";
 import { initController } from "./ui/controller";
-import { prepareIconDataUris } from "./ui/iconRaster";
+import { CrashScreen, ErrorBoundary } from "./ui/ErrorBoundary";
+import { toast } from "./ui/store";
 
-initController();
-void prepareIconDataUris();
+const root = createRoot(document.getElementById("root")!);
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-);
+try {
+  initController();
+  root.render(
+    <StrictMode>
+      <ErrorBoundary>
+        <App />
+      </ErrorBoundary>
+    </StrictMode>,
+  );
+  if (storage_errors.length) {
+    toast(`Some saved data could not be read and was reset: ${storage_errors.join(", ")}`, "warn", 8000);
+  }
+} catch (error) {
+  root.render(<CrashScreen error={error} />);
+}

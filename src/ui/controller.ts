@@ -7,6 +7,20 @@ import { closeDialog, confirmAction, highlight, openDialog, rerender, toast, ui 
 
 let worker: Worker | null = null;
 let balanceShowTimer: ReturnType<typeof setTimeout> | undefined;
+let pendingRequest: string | null = null;
+
+function requestKey() {
+  return A.collect_balance_players()
+    .map((p) => p.id)
+    .sort()
+    .join("\n");
+}
+
+function withCurrentPlayers(result: A.BalanceResult): A.BalanceResult {
+  const current = (p: Player) => find_player_by_id(p.id) ?? p;
+  const slots = (s: Record<string, Player[]>) => Object.fromEntries(Object.entries(s).map(([k, v]) => [k, v.map(current)]));
+  return { ...result, team1: result.team1.map(current), team2: result.team2.map(current), team1_slots: slots(result.team1_slots), team2_slots: slots(result.team2_slots) };
+}
 
 function workerUrl() {
   return `${import.meta.env.BASE_URL}balancer/balance_worker.js`;
@@ -18,23 +32,41 @@ function createWorker() {
   worker.postMessage(["init"]);
 }
 
-function onWorkerMessage(e: MessageEvent) {
+export function onWorkerMessage(e: { data: unknown }) {
   if (!Array.isArray(e.data) || e.data.length < 2) return;
   const [type, payload] = e.data;
+  if ((type == "finish" || type == "error") && pendingRequest !== requestKey()) {
+    clearTimeout(balanceShowTimer);
+    pendingRequest = null;
+    ui.balance = { phase: "idle", progress: 0, visible: false };
+    rerender();
+    toast("Teams changed while balancing. Press Balance again.", "warn");
+    return;
+  }
   if (type == "progress") {
     ui.balance.progress = payload.current_progress;
     rerender();
   } else if (type == "finish") {
     clearTimeout(balanceShowTimer);
+    pendingRequest = null;
     if (payload.is_successfull) {
-      A.apply_balance_result(payload);
+      A.apply_balance_result(withCurrentPlayers(payload));
       ui.balance = { phase: "idle", progress: 100, visible: false };
       ui.balancePulse++;
+      ui.balanceStamp = true;
+      const pulse = ui.balancePulse;
+      setTimeout(() => {
+        if (ui.balancePulse == pulse) {
+          ui.balanceStamp = false;
+          rerender();
+        }
+      }, 1600);
     } else {
       ui.balance = { phase: "notfound", progress: ui.balance.progress, visible: true };
     }
     rerender();
   } else if (type == "error") {
+    pendingRequest = null;
     clearTimeout(balanceShowTimer);
     ui.balance = { phase: "idle", progress: 0, visible: false };
     rerender();
@@ -43,11 +75,22 @@ function onWorkerMessage(e: MessageEvent) {
   }
 }
 
-export function balanceTeams() {
-  if (!worker) createWorker();
-  worker!.postMessage(["settings", A.build_balancer_settings()]);
-  worker!.postMessage(["balance", A.collect_balance_players()]);
+export function startBalanceRequest() {
+  pendingRequest = requestKey();
   ui.balance = { phase: "running", progress: 0, visible: false };
+  return A.collect_balance_players();
+}
+
+export function isBalancing() {
+  return ui.balance.phase == "running";
+}
+
+export function balanceTeams() {
+  if (isBalancing()) return;
+  if (!worker) createWorker();
+  const players = startBalanceRequest();
+  worker!.postMessage(["settings", A.build_balancer_settings()]);
+  worker!.postMessage(["balance", players]);
   clearTimeout(balanceShowTimer);
   balanceShowTimer = setTimeout(() => {
     if (ui.balance.phase == "running") {
@@ -59,9 +102,10 @@ export function balanceTeams() {
 }
 
 export function cancelBalance() {
+  pendingRequest = null;
   clearTimeout(balanceShowTimer);
   worker?.terminate();
-  createWorker();
+  worker = null;
   ui.balance = { phase: "idle", progress: 0, visible: false };
   rerender();
 }
@@ -91,7 +135,6 @@ function editedPlayer(): Player | undefined {
 
 export function initController() {
   A.init_state();
-  createWorker();
 
   StatsUpdater.onStart = drawStatus;
   StatsUpdater.onProgressChange = drawStatus;
@@ -108,7 +151,7 @@ export function initController() {
       A.place_new_player(adding);
       A.runtime.player_being_added = undefined;
       ui.adding = false;
-      ui.addInput = "";
+      ui.addReset++;
       highlight([player_id]);
       toast(`${adding.display_name} added`, "ok", 2200);
       return;
@@ -133,7 +176,7 @@ export function initController() {
       rerender();
       confirmAction("Can't get player stats", `${msg}. Add ${format_player_name(player_id) || player_id} manually?`, "Add manually", () => {
         const p = A.add_player_manually(player_id);
-        ui.addInput = "";
+        ui.addReset++;
         highlight([player_id]);
         openDialog({ kind: "edit", player: p, nonce: Date.now() });
       });
@@ -172,6 +215,11 @@ export function addPlayer(raw: string) {
 
 export function stopStatsUpdate() {
   StatsUpdater.stop(true);
+  if (A.runtime.player_being_added !== undefined) {
+    A.runtime.player_being_added = undefined;
+    ui.adding = false;
+  }
+  ui.stats.editorLoading = false;
   drawStatus();
 }
 
@@ -189,6 +237,7 @@ export function updatePlayerNow(player: Player) {
 }
 
 export function moveByDoubleClick(id: string) {
+  if (isBalancing()) return;
   const r = A.player_dblclick(id);
   if (r == "full") toast("Teams are full", "warn");
   rerender();

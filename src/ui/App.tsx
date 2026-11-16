@@ -13,32 +13,24 @@ import {
   type DragStartEvent,
 } from "@dnd-kit/core";
 import { AnimatePresence, LayoutGroup, motion } from "motion/react";
-import { useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import * as A from "../logic/actions";
 import { create_random_player, find_player_by_id } from "../logic/common";
 import { S } from "../logic/state";
 import type { Player } from "../logic/types";
 import { Backdrop, Footer, Header, StatsHud, Toasts } from "./Chrome";
 import { Core } from "./Core";
-import { BalanceOverlay, Dialogs } from "./Dialogs";
 import { IconTrash } from "./icons";
 import { Lobby } from "./Lobby";
 import { CardBody } from "./PlayerCard";
 import { highlight, rerender, toast, ui, useApp } from "./store";
 import { TeamPanel } from "./Team";
+import { isBalancing } from "./controller";
+import { HoverCard, hoverEnd } from "./HoverCard";
+import { toTarget } from "./dropTargets";
 
 const rank = (id: string) => (id == "trash" ? 0 : id.startsWith("player:") ? 1 : id == "empty:lobby" ? 3 : 2);
 const collision: CollisionDetection = (args) => pointerWithin(args).sort((a, b) => rank(String(a.id)) - rank(String(b.id)));
-
-function toTarget(overId: string): A.DropTarget | null {
-  if (overId == "trash") return { type: "trash" };
-  if (overId.startsWith("player:")) return { type: "player", id: overId.slice("player:".length) };
-  if (overId.startsWith("empty:")) {
-    const [, container, slot_class] = overId.split(":");
-    return { type: "empty", container: container as "lobby" | "team1" | "team2", slot_class: slot_class || undefined };
-  }
-  return null;
-}
 
 function TrashZone() {
   const { setNodeRef, isOver } = useDroppable({ id: "trash" });
@@ -95,26 +87,49 @@ const announcements: Announcements = {
   onDragCancel: ({ active }) => `Moving ${nameOf(active.id)} cancelled`,
 };
 
+const enter = (delay: number) => ({
+  initial: { opacity: 0, y: 14 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.5, delay, ease: [0.2, 0.8, 0.2, 1] as const },
+});
+
+const loadDialogs = () => import("./Dialogs");
+const Dialogs = lazy(() => loadDialogs().then((m) => ({ default: m.Dialogs })));
+const BalanceOverlay = lazy(() => loadDialogs().then((m) => ({ default: m.BalanceOverlay })));
+
 const debug = new URLSearchParams(location.search).has("debug");
 
 export function App() {
   useApp();
   const [active, setActive] = useState<Player | null>(null);
+  useEffect(() => {
+    const prefetch = () => void loadDialogs();
+    if ("requestIdleCallback" in window) {
+      const id = requestIdleCallback(prefetch, { timeout: 3000 });
+      return () => cancelIdleCallback(id);
+    }
+    const t = setTimeout(prefetch, 1500);
+    return () => clearTimeout(t);
+  }, []);
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 180, tolerance: 8 } }),
   );
 
   const onDragStart = (e: DragStartEvent) => {
-    setActive((e.active.data.current?.player as Player) ?? null);
+    hoverEnd();
+    const player = (e.active.data.current?.player as Player) ?? null;
+    setActive(player);
     ui.dragging = true;
+    ui.dragPlayer = player;
     rerender();
   };
   const onDragEnd = (e: DragEndEvent) => {
     const player = e.active.data.current?.player as Player | undefined;
     setActive(null);
     ui.dragging = false;
-    if (player && e.over) {
+    ui.dragPlayer = null;
+    if (player && e.over && !isBalancing()) {
       const target = toTarget(String(e.over.id));
       if (target) {
         const r = A.player_drop(player.id, target);
@@ -128,29 +143,37 @@ export function App() {
     <DndContext
       sensors={sensors}
       collisionDetection={collision}
-      accessibility={{ announcements }}
+      accessibility={{
+        announcements,
+        screenReaderInstructions: { draggable: "Press Enter to move this player to a free team slot or back to the lobby. Press E to edit the player." },
+      }}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       onDragCancel={() => {
         setActive(null);
         ui.dragging = false;
+        ui.dragPlayer = null;
         rerender();
       }}
     >
       <Backdrop />
-      <div className="relative z-10 min-h-screen">
+      <div className="relative z-10 flex min-h-screen flex-col xl:h-screen xl:min-h-[600px]">
         <Header />
         <LayoutGroup>
-          <main className="mx-auto grid max-w-[1600px] gap-4 px-4 pb-6 sm:px-6 lg:px-8 xl:grid-cols-[minmax(300px,360px)_minmax(0,1fr)]">
-            <div className="order-2 flex min-h-[420px] flex-col xl:order-1 xl:h-[calc(100vh-120px)] xl:min-h-[640px] xl:sticky xl:top-4">
+          <main className="mx-auto grid w-full max-w-[1600px] gap-4 px-4 pb-3 sm:px-6 lg:px-8 xl:min-h-0 xl:flex-1 xl:grid-cols-[minmax(300px,360px)_minmax(0,1fr)] xl:grid-rows-1">
+            <motion.div {...enter(0.05)} className="order-2 flex min-h-[420px] flex-col xl:order-1 xl:h-full xl:min-h-0">
               <Lobby dragging={ui.dragging} />
-            </div>
-            <div className="order-1 grid items-start gap-4 xl:order-2 lg:grid-cols-[minmax(0,1fr)_190px_minmax(0,1fr)]">
-              <TeamPanel team={1} />
-              <div className="order-first lg:order-none">
+            </motion.div>
+            <div className="order-1 grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_190px_minmax(0,1fr)] xl:order-2 xl:h-full xl:min-h-0 xl:overflow-y-auto xl:pr-1">
+              <motion.div {...enter(0.12)} className="min-w-0">
+                <TeamPanel team={1} />
+              </motion.div>
+              <motion.div {...enter(0.2)} className="order-first lg:order-none">
                 <Core />
-              </div>
-              <TeamPanel team={2} />
+              </motion.div>
+              <motion.div {...enter(0.12)} className="min-w-0">
+                <TeamPanel team={2} />
+              </motion.div>
             </div>
           </main>
         </LayoutGroup>
@@ -164,10 +187,16 @@ export function App() {
         ) : null}
       </DragOverlay>
       <AnimatePresence>{ui.dragging && <TrashZone key="trash" />}</AnimatePresence>
+      <HoverCard hidden={ui.dragging || ui.dialog.kind != "none"} />
       <StatsHud />
       <Toasts />
-      <Dialogs />
-      <BalanceOverlay />
+      <Suspense fallback={null}>
+        <Dialogs />
+      </Suspense>
+      {ui.balance.phase == "running" && <div className="fixed inset-0 z-[45] cursor-progress" aria-hidden="true" />}
+      <Suspense fallback={null}>
+        <BalanceOverlay />
+      </Suspense>
       {debug && <DebugPanel />}
     </DndContext>
   );

@@ -4,10 +4,12 @@ import { bootNewApp } from "./state";
 import { S } from "../src/logic/state";
 import * as A from "../src/logic/actions";
 import { calc_team_sr } from "../src/logic/common";
-import { export_lobby, export_teams, import_lobby, save_players_list } from "../src/logic/importExport";
+import { export_lobby, export_teams, save_players_list } from "../src/logic/importExport";
 import { StatsUpdater } from "../src/logic/statsUpdater";
 import { StatsApi } from "../src/logic/statsApi";
 
+const SCENARIOS = Number(process.env.DIFF_SCENARIOS ?? 200);
+const STEPS = Number(process.env.DIFF_STEPS ?? 20);
 const CLASSES = ["tank", "dps", "support"];
 const HEROES = ["ana", "mercy", "genji", "tracer", "reinhardt", "dva", "kiriko", "sojourn"];
 const SLOT_PRESETS = [
@@ -110,7 +112,29 @@ function makeStorage(seed: number) {
 }
 
 const ids = (arr: { id: string }[]) => arr.map((p) => p.id);
-const slotIds = (s: Record<string, { id: string }[]>) => Object.fromEntries(Object.entries(s).map(([k, v]) => [k, ids(v)]));
+
+function withClassTab(legacyText: string) {
+  const out: string[] = [];
+  const teams = [S.team1, S.team2];
+  let t = -1;
+  let i = 0;
+  for (const line of legacyText.split("\n")) {
+    if (line == S.team_names[0] || line == S.team_names[1]) {
+      t++;
+      i = 0;
+      out.push(line);
+      continue;
+    }
+    const player = teams[t]?.[i];
+    if (player && line.endsWith(player.display_name + player.classes.join("/"))) {
+      out.push(line.slice(0, line.length - player.classes.join("/").length) + "\t" + player.classes.join("/"));
+      i++;
+    } else {
+      out.push(line);
+    }
+  }
+  return out.join("\n");
+}
 const strip = (o: Record<string, unknown>) => {
   const { region: _r, platform: _p, ...rest } = o;
   return rest;
@@ -475,7 +499,7 @@ afterEach(() => {
 
 describe("new state logic matches the original app action by action", () => {
   const realRandom = Math.random;
-  for (let scenario = 0; scenario < 60; scenario++) {
+  for (let scenario = 0; scenario < SCENARIOS; scenario++) {
     it(`scenario ${scenario}`, () => {
       const storage = makeStorage(1000 + scenario);
       page = loadLegacyPage(storage);
@@ -484,7 +508,7 @@ describe("new state logic matches the original app action by action", () => {
       expect(newSnapshot()).toEqual(legacySnapshot(L));
       const rnd = seededRandom(5000 + scenario);
       try {
-        for (let step = 0; step < 14; step++) {
+        for (let step = 0; step < STEPS; step++) {
           const s = randomStep(rnd, L);
           if (!s) continue;
           const now = Date.now();
@@ -560,7 +584,9 @@ describe("import and export match the original", () => {
       for (const f of ["json", "text", "csv"]) expect(export_lobby(f), f).toBe(page.window.export_lobby(f));
       for (const f of ["text-list", "html-table"]) {
         for (const [sr, cls] of [[true, true], [false, true], [true, false], [false, false]]) {
-          expect(export_teams(f, true, sr, cls, false, 2), `${f} ${sr} ${cls}`).toBe(page.window.export_teams(f, true, sr, cls, false, 2));
+          let expected = page.window.export_teams(f, true, sr, cls, false, 2);
+          if (f == "text-list" && cls && !S.role_lock_enabled) expected = withClassTab(expected);
+          expect(export_teams(f, true, sr, cls, false, 2), `${f} ${sr} ${cls}`).toBe(expected);
         }
       }
     });
@@ -599,7 +625,9 @@ describe("import and export match the original", () => {
         for (const p of snap.lobby) if (p.last_updated && format == "text") delete p.last_updated;
         return snap;
       };
-      expect(strip(newSnapshot())).toEqual(strip(legacySnapshot(page)));
+      const legacy = legacySnapshot(page);
+      for (const p of legacy.lobby) if (p.level === undefined) p.level = 0;
+      expect(strip(newSnapshot())).toEqual(strip(legacy));
       if (result && result.ok) expect(ids(result.for_update)).toEqual(ids(page.g("StatsUpdater.queue")));
     });
   });

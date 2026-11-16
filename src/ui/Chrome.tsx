@@ -2,9 +2,49 @@ import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { addPlayer, stopStatsUpdate } from "./controller";
 import { Emblem, IconGear, IconPlus, IconRefresh, IconInfo } from "./icons";
-import { openDialog, rerender, ui } from "./store";
+import { openDialog, ui } from "./store";
+import { Tip } from "./Tip";
 
 export function Backdrop() {
+  const [photo, setPhoto] = useState<string | null>(null);
+  const root = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = root.current;
+    if (!el || !matchMedia("(pointer: fine)").matches || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    let tx = 0,
+      ty = 0,
+      x = 0,
+      y = 0,
+      frame = 0;
+    const tick = () => {
+      x += (tx - x) * 0.06;
+      y += (ty - y) * 0.06;
+      el.style.setProperty("--px", x.toFixed(4));
+      el.style.setProperty("--py", y.toFixed(4));
+      frame = Math.abs(tx - x) + Math.abs(ty - y) > 0.001 ? requestAnimationFrame(tick) : 0;
+    };
+    const onMove = (e: PointerEvent) => {
+      tx = e.clientX / window.innerWidth - 0.5;
+      ty = e.clientY / window.innerHeight - 0.5;
+      if (!frame) frame = requestAnimationFrame(tick);
+    };
+    window.addEventListener("pointermove", onMove, { passive: true });
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      cancelAnimationFrame(frame);
+    };
+  }, []);
+  useEffect(() => {
+    const src = `${import.meta.env.BASE_URL}img/${window.innerWidth < 900 ? "bg-night-960.webp" : "bg-night.webp"}`;
+    const load = () => {
+      const img = new Image();
+      img.onload = () => setPhoto(src);
+      img.src = src;
+    };
+    if (document.readyState == "complete") load();
+    else window.addEventListener("load", load, { once: true });
+    return () => window.removeEventListener("load", load);
+  }, []);
   const motes = useMemo(
     () =>
       Array.from({ length: 18 }, (_, i) => ({
@@ -16,14 +56,16 @@ export function Backdrop() {
     [],
   );
   return (
-    <div className="backdrop" aria-hidden="true">
-      <div className="backdrop-photo" style={{ backgroundImage: `url(${import.meta.env.BASE_URL}img/bg-night.jpg)` }} />
+    <div className="backdrop" aria-hidden="true" ref={root}>
+      <div className={"backdrop-photo" + (photo ? " is-ready" : "")} style={photo ? { backgroundImage: `url(${photo})` } : undefined} />
       <div className="backdrop-tint" />
       <div className="backdrop-grid" />
       <div className="backdrop-sweep" />
-      {motes.map((m, i) => (
-        <span key={i} className="mote" style={{ left: m.left, top: m.top, animationDelay: m.delay, animationDuration: m.duration }} />
-      ))}
+      <div className="backdrop-motes">
+        {motes.map((m, i) => (
+          <span key={i} className="mote" style={{ left: m.left, top: m.top, animationDelay: m.delay, animationDuration: m.duration }} />
+        ))}
+      </div>
       <div className="backdrop-noise" />
     </div>
   );
@@ -42,7 +84,7 @@ function StatsMenu() {
   }, [open]);
   return (
     <div className="relative" ref={ref}>
-      <button className="btn" onClick={() => setOpen((o) => !o)} aria-haspopup="menu" aria-expanded={open}>
+      <button className="btn" onClick={() => setOpen((o) => !o)} aria-haspopup="menu" aria-expanded={open} aria-label="Update stats">
         <IconRefresh size={15} /> <span className="hidden sm:inline">Update stats</span>
       </button>
       <AnimatePresence>
@@ -72,8 +114,11 @@ function StatsMenu() {
 }
 
 export function Header() {
+  const [value, setValue] = useState("");
+  const reset = ui.addReset;
+  useEffect(() => setValue(""), [reset]);
   const submit = () => {
-    if (!ui.adding) addPlayer(ui.addInput);
+    if (!ui.adding) addPlayer(value);
   };
   return (
     <header className="relative z-10 flex flex-wrap items-center gap-x-6 gap-y-3 px-4 pb-4 pt-5 sm:px-6 lg:px-8">
@@ -100,11 +145,8 @@ export function Header() {
         <input
           className="h-full min-w-0 flex-1 bg-transparent text-[16px] text-text placeholder:text-faint focus:outline-none"
           placeholder="BattleTag, e.g. Player#1234"
-          value={ui.addInput}
-          onChange={(e) => {
-            ui.addInput = e.target.value;
-            rerender();
-          }}
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
           aria-label="BattleTag"
           autoComplete="off"
           spellCheck={false}
@@ -121,9 +163,14 @@ export function Header() {
       </form>
 
       <div className="ml-auto flex items-center gap-2">
+        <Tip label="How it works" side="bottom">
+          <button className="btn btn-ghost !px-2.5" onClick={() => openDialog({ kind: "info" })} aria-label="How it works">
+            <IconInfo size={18} /> <span className="hidden lg:inline">Guide</span>
+          </button>
+        </Tip>
         <StatsMenu />
         <button className="btn" onClick={() => openDialog({ kind: "settings" })} aria-label="Settings">
-          <IconGear size={16} /> <span className="hidden sm:inline">Settings</span>
+          <IconGear size={16} className="gear" /> <span className="hidden sm:inline">Settings</span>
         </button>
       </div>
     </header>
@@ -203,22 +250,23 @@ export function Toasts() {
 
 export function Footer() {
   return (
-    <footer className="relative z-10 mx-auto max-w-[1600px] px-4 pb-8 pt-2 text-[12px] leading-relaxed text-faint sm:px-6 lg:px-8">
-      <p>
-        Drag players between lobby and teams, double-click to auto-move, right-click to edit. Everything is saved in this browser. Stats via{" "}
-        <a className="underline hover:text-muted" href="https://overfast-api.tekrop.fr" target="_blank" rel="noreferrer">
-          OverFast API
-        </a>
-        ; OW2 ranks are mapped to SR (500 per rank, 100 per division) for balancing. Based on{" "}
-        <a className="underline hover:text-muted" href="https://github.com/adminimusRU/OWcustomBalancer" target="_blank" rel="noreferrer">
-          OWcustomBalancer
-        </a>{" "}
-        by adminimusRU (MIT). Background photo: “Ciudad de las artes y las ciencias” by Nan Palmero,{" "}
-        <a className="underline hover:text-muted" href="https://creativecommons.org/licenses/by/2.0/" target="_blank" rel="noreferrer">
+    <footer className="relative z-10 mx-auto flex w-full max-w-[1600px] flex-wrap items-center gap-x-4 gap-y-1 px-4 pb-3 pt-1 text-[12px] text-faint sm:px-6 lg:px-8">
+      <span>
+        Photo: Nan Palmero,{" "}
+        <a className="underline decoration-dotted underline-offset-2 hover:text-muted" href="https://creativecommons.org/licenses/by/2.0/" target="_blank" rel="noreferrer">
           CC BY 2.0
         </a>
-        , cropped and color-graded. Not affiliated with or endorsed by Blizzard Entertainment. Overwatch is a trademark of Blizzard Entertainment, Inc.
-      </p>
+      </span>
+      <span>
+        Stats:{" "}
+        <a className="underline decoration-dotted underline-offset-2 hover:text-muted" href="https://overfast-api.tekrop.fr" target="_blank" rel="noreferrer">
+          OverFast API
+        </a>
+      </span>
+      <span>Not affiliated with Blizzard Entertainment</span>
+      <button className="ml-auto underline decoration-dotted underline-offset-2 hover:text-muted" onClick={() => openDialog({ kind: "info" })}>
+        About &amp; credits
+      </button>
     </footer>
   );
 }
