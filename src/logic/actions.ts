@@ -101,7 +101,7 @@ export function init_state() {
   if (export_options != null) {
     const saved = JSON.parse(export_options);
     for (const i of Object.keys(S.ExportOptions) as (keyof typeof S.ExportOptions)[]) {
-      if (saved[i] !== undefined) (S.ExportOptions as Record<string, unknown>)[i] = saved[i];
+      if (saved[i] !== undefined) (S.ExportOptions as unknown as Record<string, unknown>)[i] = saved[i];
     }
   }
 

@@ -91,11 +91,6 @@ export function escapeHtml(html: string): string {
     .replace(/\u00a0/g, "&nbsp;");
 }
 
-export function factorial(num: number) {
-  let rval = 1;
-  for (let i = 2; i <= num; i++) rval = rval * i;
-  return rval;
-}
 
 export function find_player_by_id(player_id: string): Player | undefined {
   for (let i = 0; i < S.lobby.length; i++) {
@@ -262,10 +257,6 @@ export function init_team_slots(team_struct: TeamSlots) {
   for (const class_name of class_names) team_struct[class_name] = [];
 }
 
-export function is_number_string(val: unknown) {
-  if (typeof val !== "string") return false;
-  return +val === +val;
-}
 
 export function is_undefined<T>(expr: T | undefined, if_undefined: T): T {
   return typeof expr === "undefined" ? if_undefined : expr;
@@ -343,8 +334,3 @@ export function sort_players(team: Player[], sort_field = "sr", order_asc = fals
   }
 }
 
-export function str_padding(source_str: string, length: number, padding_char = " ") {
-  let result = source_str;
-  while (result.length < length) result += padding_char;
-  return result;
-}

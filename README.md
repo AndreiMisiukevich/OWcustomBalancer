@@ -1,36 +1,32 @@
 # Overwatch custom game balancer
-Tool for balancing teams in Overwatch custom games.
 
-[Live version on GitHub Pages](https://adminimusru.github.io/OWcustomBalancer/index.html)
+Team balancer for Overwatch custom games, rebuilt for Overwatch 2: role lock 5v5 (1-2-2) by default, 6v6 and any custom slot layout, current ranks Bronze through Champion, and BattleTag lookup through the [OverFast API](https://overfast-api.tekrop.fr).
 
-## Features:
-  * Advanced auto balancing algorithm:
-    * Balancing teams by average SR and player's classes/roles;
-    * Adjustable priority of balancing factors (SR and classes);
-    * Tweakable average SR calculation depending on player's main class to reflect different gameplay impact;
-    * Separation of similar one-trick ponies;
-    * Tweakable player's SR calculation for classic balancing mode without class restrictions;
-  * Balancing with role lock:
-    * Adjustable role slots count;
-    * Aims to put players to theim main role slot;
-    * Adjustable balance factors priority;
-  * Seamless switching between 'role lock' mode and classic (no restrictions) mode;
-  * Supports separate SR per role (since Season 18);
-  * Automatic calculation of team's average SR for manual balancing;
-  * New players are added by BattleTag, all stats (current competitive SR, level, most played heroes and roles/classes) are automatically acquired via [OWAPI](https://github.com/SunDwarf/OWAPI);
-  * Lobby used to store any amount of players (limited only by browser's storage size);
-  * Player list import and export in JSON and CSV formats;
-  * Team composition export in text, HTML and image formats;
-  * Quick search for players in lobby by name or BattleTag;
-  * Player sorting by name, SR or class (only for classic mode);
-  * All added players and settings automatically saved in browser storage;
-  * Multiple ways to move players between lobby and teams:
-    * Drag & drop;
-    * Double click (auto move to empty slot);
-  * Adjustable team size and role slots (3x3, 6x6 or any custom size);
-  * Player nickname, SR and class can be edited manually (right click on player);
-  * Editable team names;
-  * Stats can be updated for all players in one click or for specific player only;
-    * Options for update only selected fields and exclude manually edited fields;
-  * Outdated stats automatically updated on player transfer from lobby;
-  * Region selection for stats (EU, US, KR).
+Fork of [adminimusRU/OWcustomBalancer](https://github.com/adminimusRU/OWcustomBalancer) (MIT). The balancing algorithm is the original one, unchanged.
+
+## Features
+
+- Balancing by average SR and roles, with or without role lock, with an automatic fallback when roles can't fill every slot
+- Adjustable priority between equal SR and players on their main role
+- One-trick separation and optional per-role SR weighting
+- OW2 ranks with divisions, mapped to SR for balancing: 500 SR per rank, 100 per division (Bronze 5 = 550, Champion 1 = 4950)
+- Add players by BattleTag; ranks, role playtime and top heroes come from OverFast (PC or console ranks)
+- Drag and drop, double-click to auto-move, right-click to edit name, roles and ranks
+- Pinned players, check-in, fill teams from checked-in players
+- Import and export of players (JSON, BattleTag list, CSV) and teams (text, table for spreadsheets, PNG)
+- Everything is stored in the browser's local storage; there is no server
+
+## Development
+
+```sh
+npm install
+npm run dev      # local dev server
+npm test         # parity and unit tests
+npm run build    # static build in dist/
+```
+
+The original app lives in `legacy/` and is used only by tests. `public/balancer/` holds the balancer worker files byte-for-byte as in the original; a test fails if they change. `tests/differential.test.ts` runs randomized action sequences (drag and drop, double-click, fill, role lock, settings, edit, check-in, balance results, stats updates) in both the original app and the new code and compares state and local storage after every step.
+
+Pushes to `master` run the tests, build and deploy to GitHub Pages.
+
+See [CREDITS.md](CREDITS.md) for third-party assets.
