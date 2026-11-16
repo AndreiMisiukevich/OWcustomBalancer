@@ -1,0 +1,1288 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`balancer golden results > 3v3 custom slots 1`] = `
+[
+  {
+    "is_rolelock": false,
+    "is_successfull": true,
+    "team1": [
+      "p00-15",
+      "p02-15",
+      "p04-15",
+    ],
+    "team1_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+    "team2": [
+      "p05-15",
+      "p03-15",
+      "p01-15",
+    ],
+    "team2_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+  },
+  {
+    "is_rolelock": false,
+    "is_successfull": true,
+    "team1": [
+      "p01-15",
+      "p03-15",
+      "p05-15",
+    ],
+    "team1_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+    "team2": [
+      "p04-15",
+      "p02-15",
+      "p00-15",
+    ],
+    "team2_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+  },
+  {
+    "is_rolelock": false,
+    "is_successfull": true,
+    "team1": [
+      "p00-15",
+      "p02-15",
+      "p04-15",
+    ],
+    "team1_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+    "team2": [
+      "p05-15",
+      "p03-15",
+      "p01-15",
+    ],
+    "team2_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+  },
+]
+`;
+
+exports[`balancer golden results > adjust SR by class, classic 1`] = `
+[
+  {
+    "is_rolelock": false,
+    "is_successfull": true,
+    "team1": [
+      "p00-7",
+      "p01-7",
+      "p06-7",
+      "p07-7",
+      "p09-7",
+      "p11-7",
+    ],
+    "team1_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+    "team2": [
+      "p10-7",
+      "p08-7",
+      "p05-7",
+      "p04-7",
+      "p03-7",
+      "p02-7",
+    ],
+    "team2_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+  },
+  {
+    "is_rolelock": false,
+    "is_successfull": true,
+    "team1": [
+      "p02-7",
+      "p03-7",
+      "p04-7",
+      "p05-7",
+      "p08-7",
+      "p10-7",
+    ],
+    "team1_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+    "team2": [
+      "p11-7",
+      "p09-7",
+      "p07-7",
+      "p06-7",
+      "p01-7",
+      "p00-7",
+    ],
+    "team2_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+  },
+  {
+    "is_rolelock": false,
+    "is_successfull": true,
+    "team1": [
+      "p00-7",
+      "p01-7",
+      "p06-7",
+      "p07-7",
+      "p09-7",
+      "p11-7",
+    ],
+    "team1_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+    "team2": [
+      "p10-7",
+      "p08-7",
+      "p05-7",
+      "p04-7",
+      "p03-7",
+      "p02-7",
+    ],
+    "team2_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+  },
+]
+`;
+
+exports[`balancer golden results > adjust SR by class, rolelock 1`] = `
+[
+  {
+    "is_rolelock": true,
+    "is_successfull": true,
+    "team1": [],
+    "team1_slots": {
+      "dps": [
+        "p00-8",
+        "p07-8",
+      ],
+      "support": [
+        "p06-8",
+        "p03-8",
+      ],
+      "tank": [
+        "p05-8",
+      ],
+    },
+    "team2": [],
+    "team2_slots": {
+      "dps": [
+        "p01-8",
+        "p02-8",
+      ],
+      "support": [
+        "p04-8",
+        "p08-8",
+      ],
+      "tank": [
+        "p09-8",
+      ],
+    },
+  },
+  {
+    "is_rolelock": true,
+    "is_successfull": true,
+    "team1": [],
+    "team1_slots": {
+      "dps": [
+        "p01-8",
+        "p02-8",
+      ],
+      "support": [
+        "p04-8",
+        "p08-8",
+      ],
+      "tank": [
+        "p09-8",
+      ],
+    },
+    "team2": [],
+    "team2_slots": {
+      "dps": [
+        "p00-8",
+        "p07-8",
+      ],
+      "support": [
+        "p06-8",
+        "p03-8",
+      ],
+      "tank": [
+        "p05-8",
+      ],
+    },
+  },
+  {
+    "is_rolelock": true,
+    "is_successfull": true,
+    "team1": [],
+    "team1_slots": {
+      "dps": [
+        "p00-8",
+        "p01-8",
+      ],
+      "support": [
+        "p03-8",
+        "p08-8",
+      ],
+      "tank": [
+        "p05-8",
+      ],
+    },
+    "team2": [],
+    "team2_slots": {
+      "dps": [
+        "p02-8",
+        "p07-8",
+      ],
+      "support": [
+        "p04-8",
+        "p06-8",
+      ],
+      "tank": [
+        "p09-8",
+      ],
+    },
+  },
+]
+`;
+
+exports[`balancer golden results > classic 6v6 1`] = `
+[
+  {
+    "is_rolelock": false,
+    "is_successfull": true,
+    "team1": [
+      "p00-1",
+      "p03-1",
+      "p04-1",
+      "p05-1",
+      "p08-1",
+      "p11-1",
+    ],
+    "team1_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+    "team2": [
+      "p10-1",
+      "p09-1",
+      "p07-1",
+      "p06-1",
+      "p02-1",
+      "p01-1",
+    ],
+    "team2_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+  },
+  {
+    "is_rolelock": false,
+    "is_successfull": true,
+    "team1": [
+      "p01-1",
+      "p02-1",
+      "p06-1",
+      "p07-1",
+      "p09-1",
+      "p10-1",
+    ],
+    "team1_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+    "team2": [
+      "p11-1",
+      "p08-1",
+      "p05-1",
+      "p04-1",
+      "p03-1",
+      "p00-1",
+    ],
+    "team2_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+  },
+  {
+    "is_rolelock": false,
+    "is_successfull": true,
+    "team1": [
+      "p00-1",
+      "p02-1",
+      "p03-1",
+      "p04-1",
+      "p07-1",
+      "p09-1",
+    ],
+    "team1_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+    "team2": [
+      "p11-1",
+      "p10-1",
+      "p08-1",
+      "p06-1",
+      "p05-1",
+      "p01-1",
+    ],
+    "team2_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+  },
+]
+`;
+
+exports[`balancer golden results > fallback 5v5 1-2-2 with 3-class players 1`] = `
+[
+  {
+    "is_rolelock": false,
+    "is_successfull": true,
+    "team1": [
+      "p00-5",
+      "p02-5",
+      "p05-5",
+      "p08-5",
+      "p09-5",
+    ],
+    "team1_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+    "team2": [
+      "p07-5",
+      "p06-5",
+      "p04-5",
+      "p03-5",
+      "p01-5",
+    ],
+    "team2_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+  },
+  {
+    "is_rolelock": false,
+    "is_successfull": true,
+    "team1": [
+      "p01-5",
+      "p03-5",
+      "p04-5",
+      "p06-5",
+      "p07-5",
+    ],
+    "team1_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+    "team2": [
+      "p09-5",
+      "p08-5",
+      "p05-5",
+      "p02-5",
+      "p00-5",
+    ],
+    "team2_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+  },
+  {
+    "is_rolelock": false,
+    "is_successfull": true,
+    "team1": [
+      "p00-5",
+      "p02-5",
+      "p05-5",
+      "p08-5",
+      "p09-5",
+    ],
+    "team1_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+    "team2": [
+      "p07-5",
+      "p06-5",
+      "p04-5",
+      "p03-5",
+      "p01-5",
+    ],
+    "team2_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+  },
+]
+`;
+
+exports[`balancer golden results > fallback to classic when role lock impossible 1`] = `
+[
+  {
+    "is_rolelock": false,
+    "is_successfull": true,
+    "team1": [
+      "p00-3",
+      "p04-3",
+      "p05-3",
+      "p07-3",
+      "p10-3",
+      "p11-3",
+    ],
+    "team1_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+    "team2": [
+      "p09-3",
+      "p08-3",
+      "p06-3",
+      "p03-3",
+      "p02-3",
+      "p01-3",
+    ],
+    "team2_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+  },
+  {
+    "is_rolelock": false,
+    "is_successfull": true,
+    "team1": [
+      "p01-3",
+      "p02-3",
+      "p03-3",
+      "p04-3",
+      "p10-3",
+      "p11-3",
+    ],
+    "team1_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+    "team2": [
+      "p09-3",
+      "p08-3",
+      "p07-3",
+      "p06-3",
+      "p05-3",
+      "p00-3",
+    ],
+    "team2_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+  },
+  {
+    "is_rolelock": false,
+    "is_successfull": true,
+    "team1": [
+      "p00-3",
+      "p01-3",
+      "p06-3",
+      "p08-3",
+      "p09-3",
+      "p10-3",
+    ],
+    "team1_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+    "team2": [
+      "p11-3",
+      "p07-3",
+      "p05-3",
+      "p04-3",
+      "p03-3",
+      "p02-3",
+    ],
+    "team2_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+  },
+]
+`;
+
+exports[`balancer golden results > not enough players 1`] = `
+[
+  {
+    "is_rolelock": false,
+    "is_successfull": false,
+    "team1": [],
+    "team1_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+    "team2": [],
+    "team2_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+  },
+  {
+    "is_rolelock": false,
+    "is_successfull": false,
+    "team1": [],
+    "team1_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+    "team2": [],
+    "team2_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+  },
+  {
+    "is_rolelock": false,
+    "is_successfull": false,
+    "team1": [],
+    "team1_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+    "team2": [],
+    "team2_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+  },
+]
+`;
+
+exports[`balancer golden results > priority 0 classic 1`] = `
+[
+  {
+    "is_rolelock": false,
+    "is_successfull": true,
+    "team1": [
+      "p00-12",
+      "p03-12",
+      "p04-12",
+      "p05-12",
+      "p08-12",
+      "p10-12",
+    ],
+    "team1_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+    "team2": [
+      "p11-12",
+      "p09-12",
+      "p07-12",
+      "p06-12",
+      "p02-12",
+      "p01-12",
+    ],
+    "team2_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+  },
+  {
+    "is_rolelock": false,
+    "is_successfull": true,
+    "team1": [
+      "p01-12",
+      "p02-12",
+      "p05-12",
+      "p06-12",
+      "p08-12",
+      "p11-12",
+    ],
+    "team1_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+    "team2": [
+      "p10-12",
+      "p09-12",
+      "p07-12",
+      "p04-12",
+      "p03-12",
+      "p00-12",
+    ],
+    "team2_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+  },
+  {
+    "is_rolelock": false,
+    "is_successfull": true,
+    "team1": [
+      "p00-12",
+      "p02-12",
+      "p03-12",
+      "p04-12",
+      "p05-12",
+      "p09-12",
+    ],
+    "team1_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+    "team2": [
+      "p11-12",
+      "p10-12",
+      "p08-12",
+      "p07-12",
+      "p06-12",
+      "p01-12",
+    ],
+    "team2_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+  },
+]
+`;
+
+exports[`balancer golden results > priority 100 rolelock 1`] = `
+[
+  {
+    "is_rolelock": true,
+    "is_successfull": false,
+    "team1": [],
+    "team1_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+    "team2": [],
+    "team2_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+  },
+  {
+    "is_rolelock": true,
+    "is_successfull": false,
+    "team1": [],
+    "team1_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+    "team2": [],
+    "team2_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+  },
+  {
+    "is_rolelock": true,
+    "is_successfull": false,
+    "team1": [],
+    "team1_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+    "team2": [],
+    "team2_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+  },
+]
+`;
+
+exports[`balancer golden results > rolelock 5v5 1-2-2 1`] = `
+[
+  {
+    "is_rolelock": true,
+    "is_successfull": true,
+    "team1": [],
+    "team1_slots": {
+      "dps": [
+        "p00-4",
+        "p04-4",
+      ],
+      "support": [
+        "p08-4",
+        "p09-4",
+      ],
+      "tank": [
+        "p07-4",
+      ],
+    },
+    "team2": [],
+    "team2_slots": {
+      "dps": [
+        "p03-4",
+        "p01-4",
+      ],
+      "support": [
+        "p06-4",
+        "p02-4",
+      ],
+      "tank": [
+        "p05-4",
+      ],
+    },
+  },
+  {
+    "is_rolelock": true,
+    "is_successfull": true,
+    "team1": [],
+    "team1_slots": {
+      "dps": [
+        "p03-4",
+        "p01-4",
+      ],
+      "support": [
+        "p06-4",
+        "p02-4",
+      ],
+      "tank": [
+        "p05-4",
+      ],
+    },
+    "team2": [],
+    "team2_slots": {
+      "dps": [
+        "p00-4",
+        "p04-4",
+      ],
+      "support": [
+        "p08-4",
+        "p09-4",
+      ],
+      "tank": [
+        "p07-4",
+      ],
+    },
+  },
+  {
+    "is_rolelock": true,
+    "is_successfull": true,
+    "team1": [],
+    "team1_slots": {
+      "dps": [
+        "p03-4",
+        "p00-4",
+      ],
+      "support": [
+        "p05-4",
+        "p02-4",
+      ],
+      "tank": [
+        "p07-4",
+      ],
+    },
+    "team2": [],
+    "team2_slots": {
+      "dps": [
+        "p01-4",
+        "p04-4",
+      ],
+      "support": [
+        "p08-4",
+        "p09-4",
+      ],
+      "tank": [
+        "p06-4",
+      ],
+    },
+  },
+]
+`;
+
+exports[`balancer golden results > rolelock 6v6 2-2-2 1`] = `
+[
+  {
+    "is_rolelock": true,
+    "is_successfull": false,
+    "team1": [],
+    "team1_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+    "team2": [],
+    "team2_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+  },
+  {
+    "is_rolelock": true,
+    "is_successfull": false,
+    "team1": [],
+    "team1_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+    "team2": [],
+    "team2_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+  },
+  {
+    "is_rolelock": true,
+    "is_successfull": false,
+    "team1": [],
+    "team1_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+    "team2": [],
+    "team2_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+  },
+]
+`;
+
+exports[`balancer golden results > separate one-tricks 1`] = `
+[
+  {
+    "is_rolelock": false,
+    "is_successfull": true,
+    "team1": [
+      "p00-6",
+      "p01-6",
+      "p04-6",
+      "p05-6",
+      "p09-6",
+      "p10-6",
+    ],
+    "team1_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+    "team2": [
+      "p11-6",
+      "p08-6",
+      "p07-6",
+      "p06-6",
+      "p03-6",
+      "p02-6",
+    ],
+    "team2_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+  },
+  {
+    "is_rolelock": false,
+    "is_successfull": true,
+    "team1": [
+      "p02-6",
+      "p03-6",
+      "p06-6",
+      "p07-6",
+      "p08-6",
+      "p11-6",
+    ],
+    "team1_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+    "team2": [
+      "p10-6",
+      "p09-6",
+      "p05-6",
+      "p04-6",
+      "p01-6",
+      "p00-6",
+    ],
+    "team2_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+  },
+  {
+    "is_rolelock": false,
+    "is_successfull": true,
+    "team1": [
+      "p00-6",
+      "p01-6",
+      "p04-6",
+      "p05-6",
+      "p09-6",
+      "p10-6",
+    ],
+    "team1_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+    "team2": [
+      "p11-6",
+      "p08-6",
+      "p07-6",
+      "p06-6",
+      "p03-6",
+      "p02-6",
+    ],
+    "team2_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+  },
+]
+`;
+
+exports[`balancer golden results > sr method average 1`] = `
+[
+  {
+    "is_rolelock": false,
+    "is_successfull": true,
+    "team1": [
+      "p00-10",
+      "p03-10",
+      "p04-10",
+      "p05-10",
+      "p06-10",
+      "p09-10",
+    ],
+    "team1_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+    "team2": [
+      "p11-10",
+      "p10-10",
+      "p08-10",
+      "p07-10",
+      "p02-10",
+      "p01-10",
+    ],
+    "team2_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+  },
+  {
+    "is_rolelock": false,
+    "is_successfull": true,
+    "team1": [
+      "p01-10",
+      "p02-10",
+      "p03-10",
+      "p08-10",
+      "p10-10",
+      "p11-10",
+    ],
+    "team1_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+    "team2": [
+      "p09-10",
+      "p07-10",
+      "p06-10",
+      "p05-10",
+      "p04-10",
+      "p00-10",
+    ],
+    "team2_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+  },
+  {
+    "is_rolelock": false,
+    "is_successfull": true,
+    "team1": [
+      "p00-10",
+      "p01-10",
+      "p06-10",
+      "p08-10",
+      "p10-10",
+      "p11-10",
+    ],
+    "team1_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+    "team2": [
+      "p09-10",
+      "p07-10",
+      "p05-10",
+      "p04-10",
+      "p03-10",
+      "p02-10",
+    ],
+    "team2_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+  },
+]
+`;
+
+exports[`balancer golden results > sr method max 1`] = `
+[
+  {
+    "is_rolelock": false,
+    "is_successfull": true,
+    "team1": [
+      "p00-9",
+      "p02-9",
+      "p06-9",
+      "p07-9",
+      "p09-9",
+      "p11-9",
+    ],
+    "team1_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+    "team2": [
+      "p10-9",
+      "p08-9",
+      "p05-9",
+      "p04-9",
+      "p03-9",
+      "p01-9",
+    ],
+    "team2_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+  },
+  {
+    "is_rolelock": false,
+    "is_successfull": true,
+    "team1": [
+      "p01-9",
+      "p03-9",
+      "p04-9",
+      "p05-9",
+      "p08-9",
+      "p10-9",
+    ],
+    "team1_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+    "team2": [
+      "p11-9",
+      "p09-9",
+      "p07-9",
+      "p06-9",
+      "p02-9",
+      "p00-9",
+    ],
+    "team2_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+  },
+  {
+    "is_rolelock": false,
+    "is_successfull": true,
+    "team1": [
+      "p00-9",
+      "p01-9",
+      "p03-9",
+      "p06-9",
+      "p08-9",
+      "p09-9",
+    ],
+    "team1_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+    "team2": [
+      "p11-9",
+      "p10-9",
+      "p07-9",
+      "p05-9",
+      "p04-9",
+      "p02-9",
+    ],
+    "team2_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+  },
+]
+`;
+
+exports[`balancer golden results > sr method weighted 1`] = `
+[
+  {
+    "is_rolelock": false,
+    "is_successfull": true,
+    "team1": [
+      "p00-11",
+      "p01-11",
+      "p04-11",
+      "p06-11",
+      "p09-11",
+      "p11-11",
+    ],
+    "team1_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+    "team2": [
+      "p10-11",
+      "p08-11",
+      "p07-11",
+      "p05-11",
+      "p03-11",
+      "p02-11",
+    ],
+    "team2_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+  },
+  {
+    "is_rolelock": false,
+    "is_successfull": true,
+    "team1": [
+      "p02-11",
+      "p03-11",
+      "p05-11",
+      "p07-11",
+      "p08-11",
+      "p10-11",
+    ],
+    "team1_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+    "team2": [
+      "p11-11",
+      "p09-11",
+      "p06-11",
+      "p04-11",
+      "p01-11",
+      "p00-11",
+    ],
+    "team2_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+  },
+  {
+    "is_rolelock": false,
+    "is_successfull": true,
+    "team1": [
+      "p00-11",
+      "p01-11",
+      "p02-11",
+      "p04-11",
+      "p06-11",
+      "p09-11",
+    ],
+    "team1_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+    "team2": [
+      "p11-11",
+      "p10-11",
+      "p08-11",
+      "p07-11",
+      "p05-11",
+      "p03-11",
+    ],
+    "team2_slots": {
+      "dps": [],
+      "support": [],
+      "tank": [],
+    },
+  },
+]
+`;
