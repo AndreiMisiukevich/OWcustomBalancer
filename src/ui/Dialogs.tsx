@@ -12,6 +12,7 @@ import { IconArrowDown, IconArrowUp, IconCopy, IconDownload, IconEdit, IconExter
 import { Field, Modal, Seg } from "./Modal";
 import { Toggle } from "./Core";
 import { prepareIconDataUris } from "./iconRaster";
+import { useVirtualRows } from "./useVirtualRows";
 import { closeDialog, highlight, rerender, toast, ui } from "./store";
 
 function copyText(text: string) {
@@ -734,11 +735,18 @@ function StatsLogDialog() {
   );
 }
 
+const CHECKIN_ROW = 40;
+
 function CheckinDialog() {
   const [sort, setSort] = useState<{ col: 0 | 1; asc: boolean }>({ col: 1, asc: true });
+  const [query, setQuery] = useState("");
   const [, force] = useState(0);
+  const listRef = useRef<HTMLDivElement | null>(null);
   const rows = useMemo(() => {
-    const list = S.lobby.map((p) => ({ id: p.id, tag: format_player_id(p.id), checked: S.checkin_list.has(p.id) }));
+    const q = query.trim().toLowerCase();
+    const list = S.lobby
+      .filter((p) => q == "" || p.id.toLowerCase().includes(q) || p.display_name.toLowerCase().includes(q))
+      .map((p) => ({ id: p.id, tag: format_player_id(p.id), checked: S.checkin_list.has(p.id) }));
     const order = sort.asc ? 1 : -1;
     list.sort((a, b) => {
       const va = sort.col == 0 ? Number(a.checked) : a.tag.toLowerCase();
@@ -746,19 +754,23 @@ function CheckinDialog() {
       return order * (va < vb ? -1 : va > vb ? 1 : 0);
     });
     return list;
-  }, [sort]);
+  }, [sort, query]);
+  const { start, end } = useVirtualRows(listRef, rows.length, CHECKIN_ROW);
   const toggle = (id: string) => {
     A.set_checkin(id, !S.checkin_list.has(id));
     force((x) => x + 1);
     rerender();
   };
-  const header = (col: 0 | 1, label: string) => (
-    <th onClick={() => setSort((s) => ({ col, asc: s.col == col ? !s.asc : true }))} aria-sort={sort.col == col ? (sort.asc ? "ascending" : "descending") : "none"}>
-      <span className="inline-flex items-center gap-1">
-        {label}
-        {sort.col == col && (sort.asc ? <IconArrowUp size={12} /> : <IconArrowDown size={12} />)}
-      </span>
-    </th>
+  const header = (col: 0 | 1, label: string, className: string) => (
+    <button
+      type="button"
+      className={"hud-label flex items-center gap-1 text-left hover:text-text " + className}
+      onClick={() => setSort((s) => ({ col, asc: s.col == col ? !s.asc : true }))}
+      aria-label={`Sort by ${label}`}
+    >
+      {label}
+      {sort.col == col && (sort.asc ? <IconArrowUp size={12} /> : <IconArrowDown size={12} />)}
+    </button>
   );
   return (
     <Modal
@@ -772,29 +784,35 @@ function CheckinDialog() {
         </button>
       }
     >
-      <div className="max-h-[55vh] overflow-y-auto border border-line">
-        <table className="tbl">
-          <thead>
-            <tr>
-              {header(0, "In")}
-              {header(1, "BattleTag")}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => {
+      <input className="field mb-3 !h-9 !text-[14px]" placeholder="Find a player" value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Find a player" autoFocus />
+      <div className="border border-line">
+        <div className="flex h-9 items-center gap-3 border-b border-line bg-ink-800 px-3">
+          {header(0, "In", "w-10")}
+          {header(1, "BattleTag", "flex-1")}
+        </div>
+        <div ref={listRef} className="h-[50vh] overflow-y-auto">
+          <div className="relative" style={{ height: rows.length * CHECKIN_ROW }}>
+            {rows.slice(start, end).map((r, i) => {
               const checked = S.checkin_list.has(r.id);
               return (
-                <tr key={r.id} className={"cursor-pointer hover:bg-white/5" + (checked ? " checked" : "")} onClick={() => toggle(r.id)}>
-                  <td className="w-10">
-                    <input type="checkbox" className="h-4 w-4 accent-[#4be3a1]" checked={checked} readOnly aria-label={`Check in ${r.tag}`} />
-                  </td>
-                  <td className="font-display text-[16px] font-semibold">{r.tag}</td>
-                </tr>
+                <button
+                  type="button"
+                  key={r.id}
+                  className={"absolute inset-x-0 flex items-center gap-3 border-b border-line/50 px-3 text-left hover:bg-white/5" + (checked ? " bg-ok/10" : "")}
+                  style={{ top: (start + i) * CHECKIN_ROW, height: CHECKIN_ROW }}
+                  onClick={() => toggle(r.id)}
+                  aria-pressed={checked}
+                >
+                  <span className="w-10">
+                    <input type="checkbox" tabIndex={-1} className="pointer-events-none h-4 w-4 accent-[#4be3a1]" checked={checked} readOnly aria-hidden="true" />
+                  </span>
+                  <span className="font-display text-[16px] font-semibold">{r.tag}</span>
+                </button>
               );
             })}
-          </tbody>
-        </table>
-        {rows.length == 0 && <div className="p-6 text-center text-[14px] text-faint">Lobby is empty.</div>}
+          </div>
+          {rows.length == 0 && <div className="p-6 text-center text-[14px] text-muted">{S.lobby.length ? "Nobody matches." : "Lobby is empty."}</div>}
+        </div>
       </div>
     </Modal>
   );

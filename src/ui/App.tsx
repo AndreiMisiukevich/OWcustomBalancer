@@ -20,7 +20,7 @@ import { S } from "../logic/state";
 import type { Player } from "../logic/types";
 import { Backdrop, Footer, Header, StatsHud, Toasts } from "./Chrome";
 import { Core } from "./Core";
-import { IconTrash } from "./icons";
+import { IconTrash, RankDefs } from "./icons";
 import { Lobby } from "./Lobby";
 import { CardBody } from "./PlayerCard";
 import { highlight, rerender, toast, ui, useApp } from "./store";
@@ -156,6 +156,7 @@ export function App() {
         rerender();
       }}
     >
+      <RankDefs />
       <Backdrop />
       <div className="relative z-10 flex min-h-screen flex-col xl:h-screen xl:min-h-[600px]">
         <Header />

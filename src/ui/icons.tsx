@@ -35,7 +35,11 @@ export function RoleIcon({ role, size = 18, className, color, title }: { role: s
 const HEX = "M32 3 57.1 17.5v29L32 61 6.9 46.5v-29Z";
 const HEX_INNER = "M32 11 50.2 21.5v21L32 53 13.8 42.5v-21Z";
 
-function rankShapes(tierIndex: number, id: string, c1: string, c2: string, division: number | null) {
+function rankDefs(id: string, c1: string, c2: string) {
+  return `<linearGradient id="${id}g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></linearGradient><linearGradient id="${id}s" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/></linearGradient>`;
+}
+
+function rankShapes(tierIndex: number, id: string, c1: string, division: number | null, inlineDefs: string) {
   const unranked = tierIndex === 0;
   const fins =
     tierIndex >= 6
@@ -50,25 +54,31 @@ function rankShapes(tierIndex: number, id: string, c1: string, c2: string, divis
         ? `<path d="M26 4 32 -1 38 4 32 8Z" fill="url(#${id}g)"/>`
         : "";
   const label = unranked ? "–" : division ? String(division) : "";
-  return `
-  <defs>
-    <linearGradient id="${id}g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></linearGradient>
-    <linearGradient id="${id}s" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/></linearGradient>
-  </defs>
-  ${fins}${crown}
+  return `${inlineDefs ? `<defs>${inlineDefs}</defs>` : ""}${fins}${crown}
   <path d="${HEX}" fill="${unranked ? "#141b2c" : `url(#${id}g)`}" stroke="${unranked ? "#4a5675" : c1}" stroke-width="2.5"/>
   <path d="${HEX_INNER}" fill="${unranked ? "none" : "#0b1122"}" fill-opacity=".55" stroke="${unranked ? "#3a4560" : "#fff"}" stroke-opacity="${unranked ? 1 : 0.35}" stroke-width="1.5"/>
   ${unranked ? "" : `<path d="M32 3 57.1 17.5 32 32 6.9 17.5Z" fill="url(#${id}s)" opacity=".5"/>`}
   ${label ? `<text x="32" y="41.5" text-anchor="middle" font-family="Saira Condensed, Arial Narrow, sans-serif" font-weight="800" font-size="26" fill="${unranked ? "#6b7896" : "#fff"}">${label}</text>` : ""}`;
 }
 
-let rankSeq = 0;
+const badgeCache = new Map<string, string>();
+
+export function RankDefs() {
+  return (
+    <svg width="0" height="0" aria-hidden="true" style={{ position: "absolute" }} dangerouslySetInnerHTML={{ __html: `<defs>${ow_ranks.map((t) => rankDefs(`rk-${t.key}`, t.color, t.color2)).join("")}</defs>` }} />
+  );
+}
 
 export function RankBadge({ sr, size = 34, showDivision = true, className }: { sr: number; size?: number; showDivision?: boolean; className?: string }) {
   const tier = rank_tier(sr);
   const index = ow_ranks.indexOf(tier);
   const division = showDivision ? rank_division(sr) : null;
-  const id = `rk${index}_${(rankSeq = (rankSeq + 1) % 1e6)}`;
+  const cacheKey = `${index}:${division}`;
+  let html = badgeCache.get(cacheKey);
+  if (html === undefined) {
+    html = rankShapes(index, `rk-${tier.key}`, tier.color, division, "");
+    badgeCache.set(cacheKey, html);
+  }
   return (
     <svg
       width={size}
@@ -77,7 +87,7 @@ export function RankBadge({ sr, size = 34, showDivision = true, className }: { s
       className={className}
       role="img"
       aria-label={tier.title}
-      dangerouslySetInnerHTML={{ __html: rankShapes(index, id, tier.color, tier.color2, division) }}
+      dangerouslySetInnerHTML={{ __html: html }}
     />
   );
 }
@@ -85,7 +95,7 @@ export function RankBadge({ sr, size = 34, showDivision = true, className }: { s
 export function rankSvgString(tierKey: string, size: number) {
   const index = Math.max(0, ow_ranks.findIndex((t) => t.key === tierKey));
   const tier = ow_ranks[index];
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="-2 -4 68 70">${rankShapes(index, "x" + index, tier.color, tier.color2, null)}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="-2 -4 68 70">${rankShapes(index, "x" + index, tier.color, null, rankDefs("x" + index, tier.color, tier.color2))}</svg>`;
 }
 
 type IconProps = SVGProps<SVGSVGElement> & { size?: number };

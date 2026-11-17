@@ -155,7 +155,7 @@ export function get_default_settings(): SettingsShape {
     update_class: true,
     update_sr: true,
     update_edited_fields: false,
-    update_picked: true,
+    update_picked: false,
     update_picked_maxage: 15,
   };
 }

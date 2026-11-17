@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { addPlayer, stopStatsUpdate } from "./controller";
 import { Emblem, IconGear, IconPlus, IconRefresh, IconInfo } from "./icons";
 import { openDialog, ui } from "./store";
@@ -7,33 +7,6 @@ import { Tip } from "./Tip";
 
 export function Backdrop() {
   const [photo, setPhoto] = useState<string | null>(null);
-  const root = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const el = root.current;
-    if (!el || !matchMedia("(pointer: fine)").matches || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    let tx = 0,
-      ty = 0,
-      x = 0,
-      y = 0,
-      frame = 0;
-    const tick = () => {
-      x += (tx - x) * 0.06;
-      y += (ty - y) * 0.06;
-      el.style.setProperty("--px", x.toFixed(4));
-      el.style.setProperty("--py", y.toFixed(4));
-      frame = Math.abs(tx - x) + Math.abs(ty - y) > 0.001 ? requestAnimationFrame(tick) : 0;
-    };
-    const onMove = (e: PointerEvent) => {
-      tx = e.clientX / window.innerWidth - 0.5;
-      ty = e.clientY / window.innerHeight - 0.5;
-      if (!frame) frame = requestAnimationFrame(tick);
-    };
-    window.addEventListener("pointermove", onMove, { passive: true });
-    return () => {
-      window.removeEventListener("pointermove", onMove);
-      cancelAnimationFrame(frame);
-    };
-  }, []);
   useEffect(() => {
     const src = `${import.meta.env.BASE_URL}img/${window.innerWidth < 900 ? "bg-night-960.webp" : "bg-night.webp"}`;
     const load = () => {
@@ -45,28 +18,11 @@ export function Backdrop() {
     else window.addEventListener("load", load, { once: true });
     return () => window.removeEventListener("load", load);
   }, []);
-  const motes = useMemo(
-    () =>
-      Array.from({ length: 18 }, (_, i) => ({
-        left: `${(i * 53) % 100}%`,
-        top: `${60 + ((i * 37) % 40)}%`,
-        delay: `${(i * 1.7) % 12}s`,
-        duration: `${14 + ((i * 7) % 12)}s`,
-      })),
-    [],
-  );
   return (
-    <div className="backdrop" aria-hidden="true" ref={root}>
+    <div className="backdrop" aria-hidden="true">
       <div className={"backdrop-photo" + (photo ? " is-ready" : "")} style={photo ? { backgroundImage: `url(${photo})` } : undefined} />
       <div className="backdrop-tint" />
       <div className="backdrop-grid" />
-      <div className="backdrop-sweep" />
-      <div className="backdrop-motes">
-        {motes.map((m, i) => (
-          <span key={i} className="mote" style={{ left: m.left, top: m.top, animationDelay: m.delay, animationDuration: m.duration }} />
-        ))}
-      </div>
-      <div className="backdrop-noise" />
     </div>
   );
 }

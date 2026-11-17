@@ -16,6 +16,7 @@ interface CardProps {
   slotClass?: string;
   compact?: boolean;
   tint?: string;
+  animate?: boolean;
 }
 
 const pop = { initial: { scale: 0, opacity: 0 }, animate: { scale: 1, opacity: 1 }, transition: { type: "spring" as const, stiffness: 600, damping: 18 } };
@@ -68,7 +69,7 @@ function openEditor(player: Player) {
   openDialog({ kind: "edit", player, nonce: Date.now() });
 }
 
-export function PlayerCard({ player, srMethod, slotClass, compact, tint }: CardProps) {
+export function PlayerCard({ player, srMethod, slotClass, compact, tint, animate = true }: CardProps) {
   const { attributes, listeners, setNodeRef: dragRef, isDragging } = useDraggable({ id: "drag:" + player.id, data: { player } });
   const { setNodeRef: dropRef, isOver } = useDroppable({ id: "player:" + player.id });
   const el = useRef<HTMLDivElement | null>(null);
@@ -81,11 +82,11 @@ export function PlayerCard({ player, srMethod, slotClass, compact, tint }: CardP
     }
   });
 
+  const Card = animate ? motion.div : "div";
+  const motionProps = animate ? { layout: "position" as const, layoutId: player.id, transition: { type: "spring" as const, stiffness: 520, damping: 38, mass: 0.8 } } : {};
   return (
-    <motion.div
-      layout="position"
-      layoutId={player.id}
-      transition={{ type: "spring", stiffness: 520, damping: 38, mass: 0.8 }}
+    <Card
+      {...motionProps}
       ref={(node: HTMLDivElement | null) => {
         el.current = node;
         dragRef(node);
@@ -134,7 +135,7 @@ export function PlayerCard({ player, srMethod, slotClass, compact, tint }: CardP
       }}
     >
       <CardBody player={player} srMethod={srMethod} slotClass={slotClass} compact={compact} />
-    </motion.div>
+    </Card>
   );
 }
 

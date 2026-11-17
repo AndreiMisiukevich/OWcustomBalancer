@@ -39,10 +39,10 @@ export function Core() {
         className="relative hidden place-items-center lg:grid"
       >
         <svg width="120" height="120" viewBox="0 0 120 120" className="absolute" aria-hidden="true">
-          <g className="ring-spin" style={{ transformOrigin: "60px 60px" }}>
+          <g>
             <circle cx="60" cy="60" r="54" fill="none" stroke="url(#vsg)" strokeWidth="2" strokeDasharray="40 14 6 14" />
           </g>
-          <g className="ring-spin-rev" style={{ transformOrigin: "60px 60px" }}>
+          <g>
             <circle cx="60" cy="60" r="44" fill="none" stroke="rgb(150 180 255 / .25)" strokeWidth="1" strokeDasharray="3 7" />
           </g>
           <defs>

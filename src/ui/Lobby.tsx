@@ -8,7 +8,10 @@ import { IconCheck, IconDownload, IconSearch, IconShuffle, IconSort, IconTrash, 
 import { PlayerCard } from "./PlayerCard";
 import { AnimatedNumber } from "./Team";
 import { Tip } from "./Tip";
-import { confirmAction, openDialog } from "./store";
+import { confirmAction, openDialog, ui } from "./store";
+import { useVirtualRows } from "./useVirtualRows";
+
+const ROW = 50;
 
 const SORTS: [string, string][] = [
   ["display_name", "Name"],
@@ -86,7 +89,20 @@ export function Lobby({ dragging }: { dragging: boolean }) {
     return () => clearTimeout(t);
   }, [filterInput]);
 
-  const visible = S.lobby.filter((p) => filter == "" || p.display_name.toLowerCase().includes(filter) || p.id.toLowerCase().includes(filter));
+  const visible = filter == "" ? S.lobby : S.lobby.filter((p) => p.display_name.toLowerCase().includes(filter) || p.id.toLowerCase().includes(filter));
+  const listRef = useRef<HTMLDivElement | null>(null);
+  const { start, end } = useVirtualRows(listRef, visible.length, ROW);
+
+  useEffect(() => {
+    const id = ui.scrollTo;
+    const el = listRef.current;
+    if (!id || !el) return;
+    const index = visible.findIndex((p) => p.id == id);
+    if (index < 0) return;
+    ui.scrollTo = null;
+    const top = index * ROW;
+    if (top < el.scrollTop || top + ROW > el.scrollTop + el.clientHeight) el.scrollTo({ top: Math.max(0, top - el.clientHeight / 2), behavior: "smooth" });
+  });
 
   return (
     <section className="panel flex min-h-0 flex-1 flex-col p-4" style={{ "--accent": "rgb(255 154 31 / 0.7)" } as React.CSSProperties} aria-label="Lobby">
@@ -163,18 +179,25 @@ export function Lobby({ dragging }: { dragging: boolean }) {
       </div>
 
       <div
-        ref={setNodeRef}
-        className={"-mx-1 mt-3 min-h-[120px] flex-1 overflow-y-auto px-1 pb-2 transition-colors" + (isOver ? " bg-brand/5 outline outline-1 outline-brand/50" : "")}
+        ref={(node) => {
+          listRef.current = node;
+          setNodeRef(node);
+        }}
+        className={"-mx-1 mt-3 min-h-[120px] flex-1 overflow-y-auto px-1 pb-2" + (isOver ? " bg-brand/5 outline outline-1 outline-brand/50" : "")}
       >
-        <div className="flex flex-col gap-1.5">
-          {visible.map((p) => (
-            <PlayerCard key={p.id} player={p} srMethod={S.Settings.sr_calc_method} compact />
-          ))}
-        </div>
+        {visible.length > 0 && (
+          <div className="relative" style={{ height: visible.length * ROW }}>
+            {visible.slice(start, end).map((p, i) => (
+              <div key={p.id} className="absolute inset-x-0" style={{ top: (start + i) * ROW }}>
+                <PlayerCard player={p} srMethod={S.Settings.sr_calc_method} compact animate={false} />
+              </div>
+            ))}
+          </div>
+        )}
         {S.lobby.length == 0 && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex h-full min-h-[200px] flex-col items-center justify-center gap-3 px-6 text-center">
             <svg width="56" height="56" viewBox="0 0 64 64" aria-hidden="true" className="opacity-70">
-              <path d="M32 3 57 17.5v29L32 61 7 46.5v-29Z" fill="none" stroke="rgb(150 180 255 / .35)" strokeWidth="2" strokeDasharray="6 5" className="ring-spin" style={{ transformOrigin: "32px 32px" }} />
+              <path d="M32 3 57 17.5v29L32 61 7 46.5v-29Z" fill="none" stroke="rgb(150 180 255 / .35)" strokeWidth="2" strokeDasharray="6 5" />
               <path d="M32 22v20M22 32h20" stroke="#ff9a1f" strokeWidth="3" strokeLinecap="round" />
             </svg>
             <div className="font-display text-[18px] font-bold uppercase tracking-[0.08em]">{dragging ? "Drop to bench" : "Lobby is empty"}</div>
