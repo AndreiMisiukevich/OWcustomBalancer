@@ -362,6 +362,16 @@ textarea.field {
   color: var(--role, currentColor);
 }
 
+.slot-role.is-off {
+  background: repeating-linear-gradient(135deg, rgb(255 154 31 / 0.32) 0 5px, rgb(255 154 31 / 0.12) 5px 10px);
+}
+
+.off-chip {
+  color: #ffc861;
+  border-color: rgb(255 200 97 / 0.45);
+  background: rgb(255 154 31 / 0.12);
+}
+
 .slot-empty.is-target {
   border-color: color-mix(in srgb, var(--role, #ff9a1f) 70%, transparent);
   color: var(--color-text);

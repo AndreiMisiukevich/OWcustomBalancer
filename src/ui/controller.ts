@@ -1,6 +1,7 @@
 import * as A from "../logic/actions";
 import { find_player_by_id, format_player_name } from "../logic/common";
 import { save_players_list } from "../logic/importExport";
+import { record_match, undo_last_match } from "../logic/offrole";
 import { StatsUpdater, StatsUpdaterState } from "../logic/statsUpdater";
 import type { Player } from "../logic/types";
 import { closeDialog, confirmAction, highlight, openDialog, rerender, toast, ui } from "./store";
@@ -233,6 +234,24 @@ export function updatePlayerNow(player: Player) {
   A.update_player_stats_now(player);
   ui.stats.editorLoading = true;
   ui.stats.editorResult = "";
+  rerender();
+}
+
+export function recordMatch() {
+  const r = record_match();
+  if (!r.ok) {
+    toast(r.reason, "warn");
+    return;
+  }
+  ui.lastRecordAt = Date.now();
+  const names = r.off.map((p) => p.display_name || p.id);
+  toast(names.length ? `Match ${r.matches} recorded. Off-role: ${names.join(", ")}` : `Match ${r.matches} recorded. Everyone was on their main role.`, "ok", 5000);
+  rerender();
+}
+
+export function undoRecordedMatch() {
+  if (undo_last_match()) toast("Last recorded match removed", "info");
+  ui.lastRecordAt = 0;
   rerender();
 }
 

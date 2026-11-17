@@ -23,6 +23,7 @@ export function bootNewApp(storage: Record<string, string>) {
   S.checkin_list = new Set();
   S.role_lock_enabled = false;
   S.team_names = ["Team 1", "Team 2"];
+  S.offrole_matches = [];
   StatsUpdater.queue = [];
   StatsUpdater.state = StatsUpdaterState.idle;
   StatsUpdater.totalQueueLength = 0;

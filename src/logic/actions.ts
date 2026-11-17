@@ -17,6 +17,7 @@ import {
 import { import_lobby, read_saved_json, restore_saved_teams, save_checkin_list, save_pinned_list, save_players_list } from "./importExport";
 import { S, storage_prefix, store } from "./state";
 import { StatsUpdater } from "./statsUpdater";
+import { load_offrole, offrole_history } from "./offrole";
 import type { Player, SettingsShape, TeamSlots } from "./types";
 
 export type DropTarget =
@@ -33,6 +34,9 @@ export interface BalancerSettings {
   balance_priority_classic: number;
   classic_sr_calc_method: string;
   balance_priority_rolelock: number;
+  offrole_rotation: number;
+  offrole_history: Record<string, number>;
+  role_balance: number;
 }
 
 export interface BalanceResult {
@@ -105,6 +109,7 @@ export function init_state() {
 
   restore_saved_teams();
   save_players_list();
+  load_offrole();
 }
 
 function convert_stored_data_v1() {
@@ -225,6 +230,9 @@ export function build_balancer_settings(): BalancerSettings {
     balance_priority_classic: S.Settings.balance_priority,
     classic_sr_calc_method: S.Settings.sr_calc_method,
     balance_priority_rolelock: S.Settings.balance_priority_rolelock,
+    offrole_rotation: Number(S.Settings.offrole_rotation) || 0,
+    offrole_history: offrole_history(),
+    role_balance: Number(S.Settings.role_balance) || 0,
   };
 }
 

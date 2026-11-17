@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import { is_undefined, print_date } from "../logic/common";
 import { class_titles, hero_classes, hero_names, rank_label } from "../logic/defines";
 import { S } from "../logic/state";
+import { offrole_history } from "../logic/offrole";
 import type { Player } from "../logic/types";
 import { IconCheck, IconLock, IconPin, RankBadge, RoleIcon } from "./icons";
 
@@ -105,6 +106,9 @@ export function HoverCard({ hidden }: { hidden: boolean }) {
                 </span>
               ))}
             </div>
+          )}
+          {(offrole_history()[p.id] ?? 0) > 0 && (
+            <div className="mt-2 text-[12px] text-brand-2">Off-role in {offrole_history()[p.id]} recorded {offrole_history()[p.id] == 1 ? "match" : "matches"} in the last 24 h</div>
           )}
           <div className="mt-2.5 border-t border-line pt-2 text-[12px] text-muted">
             Stats updated {print_date(p.last_updated)}

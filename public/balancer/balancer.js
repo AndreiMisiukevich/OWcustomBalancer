@@ -53,6 +53,9 @@ var Balancer = {
 	// setting for role lock algorithm
 	// 0 - prioritize equal teams SR, 100 - prioritize players sitting on their main class (for new algorithm with role lock)
 	balance_priority_rolelock: 50,
+	offrole_rotation: 0,
+	offrole_history: {},
+	role_balance: 0,
 	
 	
 	// internal properties
@@ -709,6 +712,9 @@ var Balancer = {
 		}
 		
 		var of_value = this.calcObjectiveFunctionValueRoleLock( sr_diff, class_mismatch, otp_conflicts );
+		if ( this.role_balance > 0 ) {
+			of_value = round_to( of_value + this.calcRoleGapRoleLock() * this.role_balance / 100, 1 );
+		}
 		
 		if ( print_debug ) {
 			this.debugMsg ( "team1 sr = " + team1_sr + ", team2 sr = " + team2_sr +", sr diff = "+sr_diff+
@@ -755,22 +761,55 @@ var Balancer = {
 			var player_struct = this.picked_players_team1[i];
 			var slot_class = player_struct.classes[ this.class_selection_mask_team1[i] ];
 			if ( player_struct.classes.indexOf(slot_class) == 1 ) {
-				players_on_offclass += 1;
+				players_on_offclass += 1 * this.offroleWeight( player_struct );
 			} else if ( player_struct.classes.indexOf(slot_class) > 1 ) {
-				players_on_offclass += 1.5;
+				players_on_offclass += 1.5 * this.offroleWeight( player_struct );
 			}
 		}
 		for( var i=0; i<this.picked_players_team2.length; i++) {
 			var player_struct = this.picked_players_team2[i];
 			var slot_class = player_struct.classes[ this.class_selection_mask_team2[i] ];
 			if ( player_struct.classes.indexOf(slot_class) == 1 ) {
-				players_on_offclass += 1;
+				players_on_offclass += 1 * this.offroleWeight( player_struct );
 			} else if ( player_struct.classes.indexOf(slot_class) > 1 ) {
-				players_on_offclass += 1.5;
+				players_on_offclass += 1.5 * this.offroleWeight( player_struct );
 			}
 		}
 		
 		return 10 * Math.pow(players_on_offclass, 2);
+	},
+	
+	calcRoleGapRoleLock: function() {
+		var gap = 0;
+		var roles = 0;
+		for ( var c=0; c<class_names.length; c++ ) {
+			var class_name = class_names[c];
+			if ( ! this.slots_count[class_name] ) {
+				continue;
+			}
+			var sum1 = 0;
+			for( var i=0; i<this.picked_players_team1.length; i++) {
+				if ( this.picked_players_team1[i].classes[ this.class_selection_mask_team1[i] ] == class_name ) {
+					sum1 += this.calcPlayerSRRoleLock( this.picked_players_team1[i], class_name );
+				}
+			}
+			var sum2 = 0;
+			for( var i=0; i<this.picked_players_team2.length; i++) {
+				if ( this.picked_players_team2[i].classes[ this.class_selection_mask_team2[i] ] == class_name ) {
+					sum2 += this.calcPlayerSRRoleLock( this.picked_players_team2[i], class_name );
+				}
+			}
+			gap += Math.abs( sum1 - sum2 ) / this.slots_count[class_name];
+			roles++;
+		}
+		return roles > 0 ? gap / roles : 0;
+	},
+	
+	offroleWeight: function( player_struct ) {
+		if ( this.offrole_rotation == 0 ) {
+			return 1;
+		}
+		return 1 + this.offrole_rotation * is_undefined( this.offrole_history[player_struct.id], 0 );
 	},
 	
 	calcObjectiveFunctionValueRoleLock: function( sr_diff, class_mismatch, otp_conflicts ) {
@@ -822,6 +861,9 @@ var Balancer = {
 			"balance_priority_classic",
 			"balance_priority_rolelock",
 			"balance_max_sr_diff",
+			"offrole_rotation",
+			"offrole_history",
+			"role_balance",
 		];
 		for ( let property_name of balance_properties ) {
 			tmp_obj[property_name] = this[property_name];

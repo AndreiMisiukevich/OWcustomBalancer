@@ -2,12 +2,14 @@
 
 Team balancer for Overwatch custom games, rebuilt for Overwatch 2: role lock 5v5 (1-2-2) by default, 6v6 and any custom slot layout, current ranks Bronze through Champion, and BattleTag lookup through the [OverFast API](https://overfast-api.tekrop.fr).
 
-Fork of [adminimusRU/OWcustomBalancer](https://github.com/adminimusRU/OWcustomBalancer) (MIT). The balancing algorithm is the original one, unchanged.
+Fork of [adminimusRU/OWcustomBalancer](https://github.com/adminimusRU/OWcustomBalancer) (MIT). The balancing algorithm is the original one with two optional additions for role lock: off-role rotation and evening out each role. With both off, or with no recorded matches, it returns exactly what the original returns.
 
 ## Features
 
 - Balancing by average SR and roles, with or without role lock, with an automatic fallback when roles can't fill every slot
 - Adjustable priority between equal SR and players on their main role
+- Off-role rotation: record each match, and for the next 24 hours the balancer prefers to give the off-role to someone who has not had it yet
+- Optional "even out each role" so tank faces tank of a similar rank
 - One-trick separation and optional per-role SR weighting
 - OW2 ranks with divisions, mapped to SR for balancing: 500 SR per rank, 100 per division (Bronze 5 = 550, Champion 1 = 4950)
 - Add players by BattleTag; ranks, role playtime and top heroes come from OverFast (PC or console ranks)
@@ -25,7 +27,7 @@ npm test         # parity and unit tests
 npm run build    # static build in dist/
 ```
 
-The original app's scripts live in `legacy/` and are used only by tests. `public/balancer/` holds the balancer worker files byte-for-byte as in the original; a test fails if they change. `tests/differential.test.ts` runs randomized action sequences (drag and drop, double-click, fill, role lock, settings, edit, check-in, balance results, stats updates) in both the original app and the new code and compares state and local storage after every step. CI runs 200 scenarios of 20 steps; for a deeper run use `DIFF_SCENARIOS=1000 npm test`. `tests/fixes.test.ts` covers bugs from the original that were fixed on purpose (import edge cases, CSV quoting, the text export separator, corrupted saved data, duplicate players).
+The original app's scripts live in `legacy/` and are used only by tests. `public/balancer/` holds the balancer worker; `balance_worker.js`, `common.js` and `ow_defines.js` are byte-for-byte the original, and `balancer.js` only adds the two optional terms. `tests/balancer.golden.test.ts` checks that with the new options off, or on without history, every scenario matches the original exactly. `tests/differential.test.ts` runs randomized action sequences (drag and drop, double-click, fill, role lock, settings, edit, check-in, balance results, stats updates) in both the original app and the new code and compares state and local storage after every step. CI runs 200 scenarios of 20 steps; for a deeper run use `DIFF_SCENARIOS=1000 npm test`. `tests/fixes.test.ts` covers bugs from the original that were fixed on purpose (import edge cases, CSV quoting, the text export separator, corrupted saved data, duplicate players).
 
 Pushes to `master` run the tests, build and deploy to GitHub Pages.
 

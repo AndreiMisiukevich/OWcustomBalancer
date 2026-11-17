@@ -42,6 +42,7 @@ export const ui = {
   },
   dragging: false,
   dragPlayer: null as Player | null,
+  lastRecordAt: 0,
   addReset: 0,
 };
 

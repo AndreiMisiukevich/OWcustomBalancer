@@ -157,6 +157,8 @@ export function get_default_settings(): SettingsShape {
     update_edited_fields: false,
     update_picked: false,
     update_picked_maxage: 15,
+    offrole_rotation: 1,
+    role_balance: 0,
   };
 }
 

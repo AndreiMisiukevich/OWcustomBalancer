@@ -13,6 +13,7 @@ import { Field, Modal, Seg } from "./Modal";
 import { Toggle } from "./Core";
 import { prepareIconDataUris } from "./iconRaster";
 import { useVirtualRows } from "./useVirtualRows";
+import { recent_matches, reset_offrole } from "../logic/offrole";
 import { closeDialog, highlight, rerender, toast, ui } from "./store";
 
 function copyText(text: string) {
@@ -494,6 +495,7 @@ function SettingsDialog() {
   const [form, setForm] = useState<SettingsShape>(() => JSON.parse(JSON.stringify(S.Settings)));
   const set = <K extends keyof SettingsShape>(k: K, v: SettingsShape[K]) => setForm((f) => ({ ...f, [k]: v }));
   const teamSize = Object.values(form.slots_count).reduce((a, b) => a + Number(b), 0);
+  const [offroleMatches, setOffroleMatches] = useState(() => recent_matches().length);
   const problems: string[] = [];
   if (class_names.some((c) => !Number.isInteger(Number(form.slots_count[c])) || form.slots_count[c] < 0 || form.slots_count[c] > 12)) problems.push("Role slots must be whole numbers from 0 to 12.");
   if (teamSize < 1) problems.push("A team needs at least one slot.");
@@ -607,6 +609,49 @@ function SettingsDialog() {
               <span>Players on main role</span>
             </div>
           </div>
+          <div>
+            <div className="mb-1 flex items-center justify-between gap-3">
+              <span className="text-[14px]">Rotate off-roles (last 24 h)</span>
+              <Seg
+                label="Off-role rotation"
+                value={String(form.offrole_rotation) as "0" | "0.5" | "1" | "2"}
+                onChange={(v) => set("offrole_rotation", Number(v))}
+                options={[
+                  ["0", "Off"],
+                  ["0.5", "Light"],
+                  ["1", "Normal"],
+                  ["2", "Strong"],
+                ]}
+              />
+            </div>
+            <p className="text-[12px] leading-snug text-faint">
+              With role lock, players who already played an off-role in recorded matches are less likely to get one again. Stronger rotation accepts a bigger SR gap.
+            </p>
+            <div className="mt-1.5 flex items-center gap-2 text-[12px] text-muted">
+              <span>
+                {offroleMatches} {offroleMatches == 1 ? "match" : "matches"} recorded in the last 24 h
+              </span>
+              {offroleMatches > 0 && (
+                <button
+                  className="text-danger underline decoration-dotted underline-offset-2"
+                  onClick={() => {
+                    reset_offrole();
+                    setOffroleMatches(0);
+                    rerender();
+                  }}
+                >
+                  Reset
+                </button>
+              )}
+            </div>
+          </div>
+          <label className="flex items-start justify-between gap-3">
+            <span>
+              <span className="block text-[14px]">Even out each role</span>
+              <span className="block text-[12px] leading-snug text-faint">Prefer tanks, damage and supports of similar rank on both sides, even if the team average moves a little.</span>
+            </span>
+            <Toggle checked={form.role_balance > 0} onChange={(v) => set("role_balance", v ? 50 : 0)} label="Even out each role" />
+          </label>
           <div>
             <div className="mb-1 text-[14px]">Without role lock</div>
             <input className="range" type="range" min={0} max={100} value={form.balance_priority} onChange={(e) => set("balance_priority", Number(e.target.value))} aria-label="Classic balance priority" />
@@ -886,6 +931,15 @@ const GUIDE: { title: string; body: React.ReactNode }[] = [
     ),
   },
   {
+    title: "Rotate off-roles",
+    body: (
+      <>
+        When roles don't add up, someone has to play an off-role. After each match press <b>Record match</b>: the app remembers who was off-role, and for the next 24 hours the balancer prefers to give the
+        off-role to someone else. Strength is in Settings; <b>Even out each role</b> there also keeps tank against tank close in rank.
+      </>
+    ),
+  },
+  {
     title: "Share the result",
     body: (
       <>
@@ -978,7 +1032,7 @@ function InfoDialog() {
         <a className="text-t1 hover:underline" href="https://github.com/adminimusRU/OWcustomBalancer" target="_blank" rel="noreferrer">
           OWcustomBalancer
         </a>{" "}
-        by adminimusRU (MIT); the balancing algorithm is unchanged. Stats from the{" "}
+        by adminimusRU (MIT); the balancing algorithm is the original one plus optional off-role rotation and per-role evening. Stats from the{" "}
         <a className="text-t1 hover:underline" href="https://overfast-api.tekrop.fr" target="_blank" rel="noreferrer">
           OverFast API
         </a>

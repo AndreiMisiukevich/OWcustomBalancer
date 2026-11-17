@@ -9,6 +9,7 @@ import { moveByDoubleClick } from "./controller";
 import { hoverEnd, hoverStart } from "./HoverCard";
 import { IconCheck, IconPin, RankBadge, RoleIcon, ROLE_COLORS } from "./icons";
 import { openDialog, ui } from "./store";
+import { is_offrole, offrole_history } from "../logic/offrole";
 
 interface CardProps {
   player: Player;
@@ -25,10 +26,12 @@ export function CardBody({ player, srMethod, slotClass, compact }: CardProps) {
   const sr = get_player_sr(player, slotClass ?? srMethod);
   const checked = !slotClass && S.checkin_list.has(player.id);
   const pinned = S.pinned_players.has(player.id);
+  const off = is_offrole(player, slotClass);
+  const offCount = offrole_history()[player.id] ?? 0;
   return (
     <>
       {slotClass && (
-        <span className="slot-role" style={{ "--role": ROLE_COLORS[slotClass] } as React.CSSProperties}>
+        <span className={"slot-role" + (off ? " is-off" : "")} style={{ "--role": ROLE_COLORS[slotClass] } as React.CSSProperties} aria-label={off ? "Playing an off-role" : undefined}>
           <RoleIcon role={slotClass} size={18} />
         </span>
       )}
@@ -47,6 +50,11 @@ export function CardBody({ player, srMethod, slotClass, compact }: CardProps) {
             </motion.span>
           )}
           {player.private_profile && <span className="chip !h-4 shrink-0 !px-1.5 !text-[10px] text-muted">PRIVATE</span>}
+          {offCount > 0 && (
+            <span className="chip off-chip !h-4 shrink-0 !px-1.5 !text-[10px]" aria-label={`Off-role in ${offCount} recorded ${offCount == 1 ? "match" : "matches"} in the last 24 hours`}>
+              OFF {offCount}
+            </span>
+          )}
         </div>
         <div className="mt-1 flex items-center gap-2 leading-none">
           <span className={"sr-num text-[14px] text-text" + (player.se === true ? " sr-edited" : "")}>{sr}</span>

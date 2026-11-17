@@ -136,7 +136,7 @@ function withClassTab(legacyText: string) {
   return out.join("\n");
 }
 const strip = (o: Record<string, unknown>) => {
-  const { region: _r, platform: _p, ...rest } = o;
+  const { region: _r, platform: _p, offrole_rotation: _o, role_balance: _b, ...rest } = o;
   return rest;
 };
 
@@ -416,7 +416,8 @@ function randomStep(rnd: Rnd, L: LegacyPage): Step | null {
           L.workerMessages.length = 0;
           L.window.balance_teams();
           const [settingsMsg, balanceMsg] = L.workerMessages;
-          expect(settingsMsg).toEqual(["settings", JSON.parse(JSON.stringify(A.build_balancer_settings()))]);
+          const { offrole_rotation: _rot, offrole_history: _hist, role_balance: _rb, ...originalSettings } = JSON.parse(JSON.stringify(A.build_balancer_settings()));
+          expect(settingsMsg).toEqual(["settings", originalSettings]);
           expect(ids(balanceMsg[1])).toEqual(ids(A.collect_balance_players()));
           const result = fakeBalanceResult(balanceMsg[1], seed);
           const cloned = L.window.JSON.parse(JSON.stringify(result));

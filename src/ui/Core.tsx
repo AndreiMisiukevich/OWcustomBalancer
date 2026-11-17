@@ -2,8 +2,9 @@ import { AnimatePresence, motion } from "motion/react";
 import * as A from "../logic/actions";
 import { calc_team_sr, get_team_size } from "../logic/common";
 import { S } from "../logic/state";
-import { balanceTeams, runAndRender } from "./controller";
-import { IconDownload, IconScale, IconShuffle, IconLock } from "./icons";
+import { balanceTeams, recordMatch, runAndRender, undoRecordedMatch } from "./controller";
+import { recent_matches } from "../logic/offrole";
+import { IconCheck, IconDownload, IconScale, IconShuffle, IconLock } from "./icons";
 import { openDialog, ui } from "./store";
 import { AnimatedNumber } from "./Team";
 import { Tip } from "./Tip";
@@ -27,6 +28,7 @@ export function Core() {
   const count = (flat: typeof S.team1, slots: typeof S.team1_slots) => (S.role_lock_enabled ? Object.values(slots).reduce((a, x) => a + x.length, 0) : flat.length);
   const complete = size > 0 && count(S.team1, S.team1_slots) >= size && count(S.team2, S.team2_slots) >= size;
   const gap = Math.abs(delta);
+  const recent = recent_matches().length;
   const quality = !complete ? { text: "Teams not full", color: "text-muted" } : gap <= 50 ? { text: "Even", color: "text-ok" } : gap <= 150 ? { text: "Close", color: "text-brand-2" } : { text: "Uneven", color: "text-danger" };
 
   return (
@@ -107,6 +109,26 @@ export function Core() {
           </span>
         </button>
       </Tip>
+
+      {S.role_lock_enabled && (
+        <div className="w-full">
+          <Tip label="After a match, remember who played an off-role so the balancer rotates them" side="bottom">
+            <button className="btn btn-ghost w-full border-line !border" onClick={recordMatch} disabled={!complete}>
+              <IconCheck size={15} /> Record match
+            </button>
+          </Tip>
+          <div className="mt-1 flex items-center justify-center gap-2 text-[12px] text-muted">
+            <span>
+              {recent} {recent == 1 ? "match" : "matches"} in 24 h
+            </span>
+            {ui.lastRecordAt > 0 && recent > 0 && (
+              <button className="underline decoration-dotted underline-offset-2 hover:text-text" onClick={undoRecordedMatch}>
+                Undo
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="grid w-full grid-cols-2 gap-2">
         <Tip label="Fill empty slots with random players from the lobby (checked-in only, if anyone is checked in)" side="bottom">

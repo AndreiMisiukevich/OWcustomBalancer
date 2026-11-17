@@ -37,13 +37,21 @@ function TrashZone() {
   return (
     <motion.div
       ref={setNodeRef}
-      className={"trash-zone fixed bottom-6 left-1/2 z-40 flex h-16 w-[min(420px,calc(100vw-32px))] items-center justify-center gap-3 font-display text-[18px] font-bold uppercase tracking-[0.14em] text-white transition-transform" + (isOver ? " is-over" : "")}
-      initial={{ opacity: 0, y: 40, x: "-50%" }}
-      animate={{ opacity: 1, y: 0, x: "-50%" }}
-      exit={{ opacity: 0, y: 40, x: "-50%" }}
-      transition={{ type: "spring", stiffness: 400, damping: 30 }}
+      className="fixed bottom-6 left-1/2 z-40 h-16 w-[min(420px,calc(100vw-32px))] -translate-x-1/2"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.15 }}
     >
-      <IconTrash size={22} /> Drop to delete player
+      <motion.div
+        className={"trash-zone flex h-full w-full items-center justify-center gap-3 font-display text-[18px] font-bold uppercase tracking-[0.14em] text-white transition-transform" + (isOver ? " is-over" : "")}
+        initial={{ y: 40 }}
+        animate={{ y: 0 }}
+        exit={{ y: 40 }}
+        transition={{ type: "spring", stiffness: 400, damping: 30 }}
+      >
+        <IconTrash size={22} /> Drop to delete player
+      </motion.div>
     </motion.div>
   );
 }
@@ -125,7 +133,7 @@ export function App() {
     rerender();
   };
   const onDragEnd = (e: DragEndEvent) => {
-    const player = e.active.data.current?.player as Player | undefined;
+    const player = ui.dragPlayer ?? (e.active.data.current?.player as Player | undefined);
     setActive(null);
     ui.dragging = false;
     ui.dragPlayer = null;

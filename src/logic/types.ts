@@ -40,6 +40,8 @@ export interface SettingsShape {
   update_edited_fields: boolean;
   update_picked: boolean;
   update_picked_maxage: number;
+  offrole_rotation: number;
+  role_balance: number;
   [key: string]: unknown;
 }
 

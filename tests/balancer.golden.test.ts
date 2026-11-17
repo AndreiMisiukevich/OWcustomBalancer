@@ -90,10 +90,73 @@ const CASES: [string, object, object[], number?][] = [
 ];
 
 describe("balancer worker files", () => {
-  it("are byte-identical to the original implementation", () => {
-    for (const f of ["balance_worker.js", "balancer.js", "common.js", "ow_defines.js"]) {
+  it("keep the worker, helpers and definitions byte-identical to the original", () => {
+    for (const f of ["balance_worker.js", "common.js", "ow_defines.js"]) {
       expect(readRepoFile(`public/balancer/${f}`).equals(readRepoFile(`legacy/${f}`)), f).toBe(true);
     }
+  });
+});
+
+function offroleCase(history: Record<string, number>, rotation: number, seed: number) {
+  const p = (id: string, classes: string[], sr: Record<string, number>) => ({ id, display_name: id, classes, sr_by_class: sr, playtime_by_class: {}, top_heroes: [], level: 0, last_updated: "1970-01-01T00:00:00.000Z", private_profile: false });
+  const players = [
+    p("t-tank", ["tank"], { tank: 2500 }),
+    p("a-flex", ["dps", "tank"], { dps: 2500, tank: 2500 }),
+    p("b-flex", ["dps", "tank"], { dps: 2500, tank: 2500 }),
+    p("d1", ["dps"], { dps: 2400 }),
+    p("d2", ["dps"], { dps: 2600 }),
+    p("d3", ["dps"], { dps: 2500 }),
+    p("s1", ["support"], { support: 2450 }),
+    p("s2", ["support"], { support: 2550 }),
+    p("s3", ["support"], { support: 2500 }),
+    p("s4", ["support"], { support: 2500 }),
+  ];
+  const settings = { ...BASE, algorithm: "rolelock", slots_count: { tank: 1, dps: 2, support: 2 }, offrole_rotation: rotation, offrole_history: history };
+  const [r] = run("public/balancer", settings, players, seed);
+  return [...r.team1_slots.tank, ...r.team2_slots.tank].find((id) => id != "t-tank");
+}
+
+function roleGapCase(roleBalance: number, seed: number) {
+  const p = (id: string, classes: string[], sr: Record<string, number>) => ({ id, display_name: id, classes, sr_by_class: sr, playtime_by_class: {}, top_heroes: [], level: 0, last_updated: "1970-01-01T00:00:00.000Z", private_profile: false });
+  const players = [
+    p("tank-2500", ["tank"], { tank: 2500 }),
+    p("tank-4000", ["tank", "dps"], { tank: 4000, dps: 2700 }),
+    p("flex-2700", ["dps", "tank"], { dps: 4000, tank: 2700 }),
+    p("d1", ["dps"], { dps: 2500 }),
+    p("d2", ["dps"], { dps: 2500 }),
+    p("d3", ["dps"], { dps: 2500 }),
+    p("s1", ["support"], { support: 2500 }),
+    p("s2", ["support"], { support: 2500 }),
+    p("s3", ["support"], { support: 2500 }),
+    p("s4", ["support"], { support: 2500 }),
+  ];
+  const settings = { ...BASE, algorithm: "rolelock", balance_priority_rolelock: 0, slots_count: { tank: 1, dps: 2, support: 2 }, role_balance: roleBalance };
+  const [r] = run("public/balancer", settings, players, seed);
+  return [...r.team1_slots.tank, ...r.team2_slots.tank].sort();
+}
+
+describe("even out each role", () => {
+  it("pairs tanks of similar rank when enabled", () => {
+    for (let seed = 1; seed <= 15; seed++) expect(roleGapCase(50, seed), `seed ${seed}`).toEqual(["flex-2700", "tank-2500"]);
+  });
+
+  it("is ignored when disabled, leaving the uneven tank pair possible", () => {
+    const pairs = new Set(Array.from({ length: 25 }, (_, i) => roleGapCase(0, i + 1).join("+")));
+    expect(pairs.has("tank-2500+tank-4000")).toBe(true);
+  });
+});
+
+describe("off-role rotation", () => {
+  it("sends the player who has not been on an off-role yet", () => {
+    for (let seed = 1; seed <= 25; seed++) {
+      expect(offroleCase({ "a-flex": 2 }, 1, seed), `seed ${seed}`).toBe("b-flex");
+      expect(offroleCase({ "b-flex": 1 }, 1, seed), `seed ${seed}`).toBe("a-flex");
+    }
+  });
+
+  it("with rotation off, picks either flex player as before", () => {
+    const picked = new Set(Array.from({ length: 25 }, (_, i) => offroleCase({ "a-flex": 2 }, 0, i + 1)));
+    expect(picked).toEqual(new Set(["a-flex", "b-flex"]));
   });
 });
 
@@ -103,6 +166,15 @@ describe("balancer partial teams", () => {
     expect(() => run("public/balancer", BASE, players, 42)).toThrow(/reading .classes./);
     expect(() => run("legacy", BASE, players, 42)).toThrow(/reading .classes./);
   });
+});
+
+describe("new balancer options at their defaults", () => {
+  for (const [name, settings, players] of CASES) {
+    it(`match the original with rotation on but no recorded matches: ${name}`, () => {
+      const withDefaults = { ...settings, offrole_rotation: 1, offrole_history: {}, role_balance: 0 };
+      expect(run("public/balancer", withDefaults, players, 42, 3)).toEqual(run("legacy", settings, players, 42, 3));
+    });
+  }
 });
 
 describe("balancer golden results", () => {

@@ -92,6 +92,7 @@ export function Lobby({ dragging }: { dragging: boolean }) {
   const visible = filter == "" ? S.lobby : S.lobby.filter((p) => p.display_name.toLowerCase().includes(filter) || p.id.toLowerCase().includes(filter));
   const listRef = useRef<HTMLDivElement | null>(null);
   const { start, end } = useVirtualRows(listRef, visible.length, ROW);
+  const dragIndex = ui.dragPlayer ? visible.indexOf(ui.dragPlayer) : -1;
 
   useEffect(() => {
     const id = ui.scrollTo;
@@ -192,6 +193,11 @@ export function Lobby({ dragging }: { dragging: boolean }) {
                 <PlayerCard player={p} srMethod={S.Settings.sr_calc_method} compact animate={false} />
               </div>
             ))}
+            {dragIndex >= 0 && (dragIndex < start || dragIndex >= end) && (
+              <div key={visible[dragIndex].id} className="absolute inset-x-0" style={{ top: dragIndex * ROW }}>
+                <PlayerCard player={visible[dragIndex]} srMethod={S.Settings.sr_calc_method} compact animate={false} />
+              </div>
+            )}
           </div>
         )}
         {S.lobby.length == 0 && (

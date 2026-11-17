@@ -14,6 +14,7 @@ export const S = {
   ExportOptions: {} as ExportOptionsShape,
   role_lock_enabled: false,
   team_names: ["Team 1", "Team 2"] as [string, string],
+  offrole_matches: [] as { at: number; off: string[] }[],
 };
 
 let version = 0;
